@@ -454,9 +454,11 @@ const PRODUCT_DATA = {
   farmaceutico:{
     label:'Medicamento Genérico', layoutIdeal:'celular',
     contexto:'Produção em lotes controlados com salas limpas por tipo de formulação. Layout celular por forma farmacêutica (sólidos, líquidos, semissólidos).',
-    volume:3, variedade:2,
-    fluxo:'Lotes sequenciais com quarentena entre etapas',
-    recomendacao:'Celular por forma farmacêutica',
+    etapas:['Pesagem','Granulação','Compressão','Revestimento','Inspeção','Embalagem'],
+    distancias_linha:[10,8,7,6,5],
+    distancias_func:[18,22,20,16,24],
+    estoqueIP_linha:1200, estoqueIP_func:5800,
+    leadtime_linha:24, leadtime_func:72,
   },
   autoeletrico:{
     label:'Automóvel Elétrico', layoutIdeal:'linha',
