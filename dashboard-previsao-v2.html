@@ -745,10 +745,10 @@ const URL_VOLTAR  = URL_PARAMS.get('voltar');    // URL do APO Lab
 // Etapas da jornada para a barra de navegação
 const JORNADA = [
   {id:'demanda',    icon:'📈', name:'Previsão',    url:null},
-  {id:'localizacao',icon:'📍', name:'Localização', url:'https://apo-localizacao.netlify.app'},
-  {id:'modelo',     icon:'⚙️', name:'Modelo Prod.',url:'https://apo-producao.netlify.app'},
-  {id:'capacidade', icon:'⚡', name:'Capacidade',  url:'https://apo-capacidade.netlify.app'},
-  {id:'arranjo',    icon:'🏭', name:'Arranjo',     url:'https://apo-arranjo.netlify.app'},
+  {id:'localizacao',icon:'📍', name:'Localização', url:'https://christianeandrade-sys.github.io/APO-Lab/simulador-localizacao.html'},
+  {id:'modelo',     icon:'⚙️', name:'Modelo Prod.',url:'https://christianeandrade-sys.github.io/APO-Lab/simulador-modelo-producao.html'},
+  {id:'capacidade', icon:'⚡', name:'Capacidade',  url:'https://christianeandrade-sys.github.io/APO-Lab/simulador-capacidade.html'},
+  {id:'arranjo',    icon:'🏭', name:'Arranjo',     url:'https://christianeandrade-sys.github.io/APO-Lab/simulador-arranjo-fisico.html'},
   {id:'agregado',   icon:'📋', name:'Pl. Agr.',    url:null},
   {id:'pmp',        icon:'📅', name:'PMP',         url:null},
   {id:'mrp',        icon:'🔩', name:'MRP',         url:null},
@@ -794,7 +794,7 @@ function initJourneyBar() {
 }
 
 function voltarApoLab() {
-  const dest = URL_VOLTAR || 'https://apolab-ufrrj.netlify.app';
+  const dest = URL_VOLTAR || 'https://christianeandrade-sys.github.io/APO-Lab/apolab-home.html';
   window.location.href = dest;
 }
 
@@ -1453,7 +1453,7 @@ window.addEventListener('load', () => {
   goStep(2);
 });
 
-function voltarHome(){window.location.href='https://apolab-ufrrj.netlify.app';}
+function voltarHome(){window.location.href='https://christianeandrade-sys.github.io/APO-Lab/apolab-home.html';}
 </script>
 </body>
 </html>
