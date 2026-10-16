@@ -1,0 +1,981 @@
+<title>APO Lab · Planejamento agregado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+<style>
+/* ── Layout: fixed topbar + journey bar, scrollable main, two-column dashboard ── */
+:root{
+  --ink:#12100e;--paper:#f7f4ee;--cream:#ede9df;
+  --red:#bf4020;--blue:#0a325c;--green:#4ca456;--gold:#b8860b;
+  --orange:#0a325c;--muted:#756e62;--border:#cec8bc;--white:#fff;
+  --shadow-sm:0 1px 4px rgba(18,16,14,.07);
+  --shadow:0 3px 14px rgba(18,16,14,.10);
+  --shadow-lg:0 8px 32px rgba(18,16,14,.14);
+  --r:10px;
+  /* semantic */
+  --bg:var(--paper);--fg:var(--ink);--surface:var(--white);
+  --surface2:var(--cream);--border-c:var(--border);
+}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#1a1714;--fg:#ece8e0;--surface:#252220;--surface2:#2e2b28;
+  --border-c:#3a3530;--muted:#9a9186;--paper:#1a1714;--cream:#252220;
+  --white:#252220;--border:#3a3530;
+  color-scheme:dark
+}}
+:root[data-theme="dark"]{
+  --bg:#1a1714;--fg:#ece8e0;--surface:#252220;--surface2:#2e2b28;
+  --border-c:#3a3530;--muted:#9a9186;--paper:#1a1714;--cream:#252220;
+  --white:#252220;--border:#3a3530;
+  color-scheme:dark
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:'DM Sans',sans-serif;font-size:15px;line-height:1.6;
+  background:var(--bg);color:var(--fg);
+  min-height:100%;overflow-x:hidden;
+}
+a{color:var(--blue)}
+
+/* ── TOPBAR ── */
+.topbar{background:#0a325c;color:#fff;padding:0;position:fixed;top:env(safe-area-inset-top,0px);left:0;right:0;z-index:200;border-bottom:4px solid #4ca456}
+.topbar-inner{padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.topbar-left{display:flex;align-items:center;gap:18px}
+.topbar-logo{height:48px;width:auto;filter:brightness(0) invert(1) drop-shadow(0 0 2px rgba(255,255,255,.6))}
+.topbar-logo-fallback{display:none;font-family:'Fraunces',serif;font-size:18px;font-weight:900;color:white}
+.topbar-divider{width:1px;height:40px;background:rgba(255,255,255,.2)}
+.topbar-title{font-family:'Fraunces',serif;font-size:20px;font-weight:900;letter-spacing:-.3px}
+.topbar-sub{font-size:11px;color:#bbb;letter-spacing:.6px;margin-top:3px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.inst-bar{background:#062848;border-top:1px solid rgba(255,255,255,.1);padding:5px 28px;display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.3px;flex-wrap:wrap}
+.inst-sep{color:#555;margin:0 3px}
+.btn-restart{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;border:1.5px solid #555;background:transparent;color:#ccc;cursor:pointer;transition:border-color .15s,color .15s}
+.btn-restart:hover{border-color:#aaa;color:white}
+
+/* ── JOURNEY BAR ── */
+.journey-bar{
+  position:fixed;top:96px;left:0;right:0;z-index:190;
+  background:#0d1f35;border-bottom:2px solid #4ca456;
+  padding:0 16px;display:none;align-items:center;gap:4px;
+  height:56px;overflow-x:auto;scrollbar-width:none;
+}
+.journey-bar::-webkit-scrollbar{display:none}
+.journey-bar.visible{display:flex}
+.journey-back{
+  flex-shrink:0;font-size:12px;font-weight:600;color:rgba(255,255,255,.7);
+  padding:6px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.25);
+  cursor:pointer;white-space:nowrap;transition:color .15s,border-color .15s;text-decoration:none;
+  display:flex;align-items:center;gap:4px;background:transparent;
+}
+.journey-back:hover{color:#fff;border-color:#fff}
+.journey-sep{color:rgba(255,255,255,.25);font-size:12px;flex-shrink:0}
+.journey-steps{display:flex;align-items:center;gap:2px;flex:1}
+.journey-step{
+  flex-shrink:0;display:flex;align-items:center;gap:5px;
+  font-size:13px;font-weight:500;color:rgba(255,255,255,.8);
+  padding:5px 12px;border-radius:20px;white-space:nowrap;
+  transition:color .15s,background .15s;
+}
+.journey-step.clickable{cursor:pointer}
+.journey-step.clickable:hover{color:rgba(255,255,255,.85);background:rgba(255,255,255,.08)}
+.journey-step.current{
+  color:#fff;background:#0a325c;
+  border:2px solid #4ca456;font-weight:700;
+}
+.journey-step.disabled{color:rgba(255,255,255,.2);cursor:default}
+.journey-product{
+  flex-shrink:0;margin-left:auto;
+  font-size:12px;font-weight:700;
+  background:#4ca456;color:#fff;
+  border:none;
+  padding:4px 13px;border-radius:20px;white-space:nowrap;
+}
+
+/* ── MAIN CONTENT ── */
+.main-content{
+  padding-top:96px; /* topbar height */
+  min-height:100vh;
+}
+.main-content.has-journey{padding-top:152px}
+
+/* ── ONBOARDING ── */
+.onboarding{max-width:860px;margin:0 auto;padding:40px 28px 60px}
+.step{display:none}
+.step.active{display:block}
+
+.step-header{margin-bottom:32px;text-align:center}
+.step-header h1{
+  font-family:'Fraunces',serif;font-size:28px;font-weight:900;
+  color:var(--fg);letter-spacing:-.5px;margin-bottom:8px;text-wrap:balance;
+}
+.step-header p{color:var(--muted);font-size:15px;max-width:580px;margin:0 auto;line-height:1.6}
+
+.tip{
+  background:var(--surface2);border-left:3px solid var(--gold);
+  border-radius:var(--r);padding:14px 18px;margin-bottom:28px;
+  font-size:13px;color:var(--muted);line-height:1.55;
+}
+
+/* ── PRODUCT GRID ── */
+.product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
+@media(max-width:620px){.product-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:400px){.product-grid{grid-template-columns:1fr}}
+
+.product-card{
+  background:var(--surface);border:2px solid var(--border-c);border-radius:var(--r);
+  padding:20px 16px;cursor:pointer;transition:border-color .15s,box-shadow .15s,transform .1s;
+  display:flex;flex-direction:column;gap:6px;
+}
+.product-card:hover{border-color:#0a325c;box-shadow:var(--shadow)}
+.product-card.selected{border-color:#0a325c;box-shadow:0 0 0 3px rgba(10,50,92,.15)}
+.product-card .pc-icon{font-size:28px;margin-bottom:4px}
+.product-card .pc-label{font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:var(--fg)}
+.product-card .pc-modelo{font-size:11px;font-weight:600;letter-spacing:.4px;color:var(--blue);text-transform:uppercase;margin-top:2px}
+.product-card .pc-tag{font-size:11px;color:var(--muted)}
+
+/* ── STRATEGY GRID ── */
+.strategy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:28px}
+@media(max-width:640px){.strategy-grid{grid-template-columns:1fr}}
+
+.strategy-card{
+  background:var(--surface);border:2px solid var(--border-c);border-radius:var(--r);
+  padding:22px 18px;cursor:pointer;transition:border-color .15s,box-shadow .15s;
+}
+.strategy-card:hover{border-color:#0a325c;box-shadow:var(--shadow)}
+.strategy-card.selected{border-color:#0a325c;box-shadow:0 0 0 3px rgba(10,50,92,.15)}
+.strategy-card .sc-icon{font-size:26px;margin-bottom:8px}
+.strategy-card .sc-name{font-family:'Fraunces',serif;font-size:17px;font-weight:700;color:var(--fg);margin-bottom:6px}
+.strategy-card .sc-desc{font-size:13px;color:var(--muted);line-height:1.5;margin-bottom:10px}
+.strategy-card .sc-tag{
+  display:inline-block;font-size:11px;font-weight:600;letter-spacing:.4px;
+  padding:3px 9px;border-radius:20px;
+  background:var(--surface2);color:var(--blue);border:1px solid var(--border-c);
+}
+
+/* ── STEP NAV ── */
+.step-nav{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.btn{
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;
+  padding:10px 24px;border-radius:8px;cursor:pointer;transition:background .15s,opacity .15s;
+  border:none;
+}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:disabled{opacity:.35;cursor:default}
+.btn-primary:not(:disabled):hover{background:#0d3d73}
+.btn-secondary{background:var(--surface2);color:var(--muted);border:1.5px solid var(--border-c)}
+.btn-secondary:hover{border-color:#aaa;color:var(--fg)}
+
+/* ── DASHBOARD ── */
+.dashboard{display:none;max-width:1100px;margin:0 auto;padding:28px 28px 60px}
+.dashboard.visible{display:block}
+
+.context-pill{
+  display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap;
+  background:var(--surface);border:1.5px solid var(--border-c);
+  border-radius:var(--r);padding:10px 18px;margin-bottom:20px;
+  font-size:13px;font-weight:500;
+}
+.context-pill .cp-sep{color:var(--border-c);margin:0 4px}
+
+/* ── STRATEGY SWITCHER ── */
+.strategy-switcher{
+  display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;
+}
+.strat-btn{
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
+  padding:8px 20px;border-radius:24px;cursor:pointer;
+  border:2px solid var(--border-c);background:var(--surface);
+  color:var(--muted);transition:border-color .15s,background .15s,color .15s;
+  display:flex;align-items:center;gap:6px;
+}
+.strat-btn:hover{border-color:#0a325c;color:var(--fg)}
+.strat-btn.active{
+  border-color:#0a325c;background:#0a325c;color:#fff;
+}
+
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+@media(max-width:720px){.dash-grid{grid-template-columns:1fr}}
+
+.card{
+  background:var(--surface);border:1.5px solid var(--border-c);border-radius:var(--r);
+  padding:20px;box-shadow:var(--shadow-sm);
+}
+.card-title{
+  font-family:'Fraunces',serif;font-size:14px;font-weight:700;
+  letter-spacing:-.2px;color:var(--muted);margin-bottom:14px;
+  text-transform:uppercase;font-size:11px;letter-spacing:.6px;
+}
+
+/* ── CHART ── */
+.chart-wrap{position:relative;height:300px}
+
+/* ── COST COMPARISON ── */
+.cost-cards{display:flex;flex-direction:column;gap:10px}
+.cost-row{
+  display:flex;align-items:center;gap:12px;
+  padding:12px 14px;border-radius:8px;border:2px solid var(--border-c);
+  transition:border-color .15s,background .15s;
+}
+.cost-row.active{border-color:var(--blue);background:rgba(10,50,92,.04)}
+.cost-row .cr-icon{font-size:18px;flex-shrink:0}
+.cost-row .cr-name{font-weight:700;font-size:13px;color:var(--fg);flex:1}
+.cost-row .cr-total{
+  font-family:'DM Mono',monospace;font-size:16px;font-weight:500;
+  color:var(--fg);font-variant-numeric:tabular-nums;
+}
+.cost-row.active .cr-total{color:var(--blue);font-weight:700}
+.cost-breakdown{font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4}
+
+/* ── TABLE ── */
+.table-wrap{overflow-x:auto;margin-bottom:20px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{
+  background:var(--surface2);border-bottom:2px solid var(--border-c);
+  padding:9px 12px;text-align:right;font-weight:700;letter-spacing:.3px;
+  font-size:11px;color:var(--muted);white-space:nowrap;
+}
+thead th:first-child{text-align:left}
+tbody tr:nth-child(even){background:var(--surface2)}
+tbody td{
+  padding:8px 12px;border-bottom:1px solid var(--border-c);
+  text-align:right;font-family:'DM Mono',monospace;font-size:13px;
+  font-variant-numeric:tabular-nums;
+}
+tbody td:first-child{text-align:left;font-family:'DM Sans',sans-serif;font-weight:600}
+tbody tr.row-deficit td{background:rgba(191,64,32,.07)}
+tbody tr.row-excess td{background:rgba(184,134,11,.07)}
+tfoot td{
+  font-weight:700;padding:10px 12px;border-top:2px solid var(--border-c);
+  background:var(--surface2);font-family:'DM Mono',monospace;
+  font-variant-numeric:tabular-nums;
+}
+tfoot td:first-child{font-family:'DM Sans',sans-serif}
+
+/* ── CONCEPT PANEL ── */
+.concept-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px}
+@media(max-width:640px){.concept-grid{grid-template-columns:1fr}}
+.concept-card{
+  background:var(--surface);border:1.5px solid var(--border-c);
+  border-radius:var(--r);padding:20px;
+}
+.concept-card.active-concept{border-color:var(--blue)}
+.cc-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.cc-icon{font-size:22px}
+.cc-name{font-family:'Fraunces',serif;font-size:15px;font-weight:700;color:var(--fg)}
+.cc-body{font-size:13px;color:var(--muted);line-height:1.55}
+.cc-body strong{color:var(--fg)}
+.cc-ref{font-size:11px;color:var(--border-c);margin-top:10px;font-style:italic}
+
+/* ── SECTION TITLE ── */
+.section-title{
+  font-family:'Fraunces',serif;font-size:16px;font-weight:700;
+  color:var(--fg);margin-bottom:12px;letter-spacing:-.2px;
+}
+
+/* ── BADGES ── */
+.badge{
+  display:inline-block;font-size:11px;font-weight:600;letter-spacing:.3px;
+  padding:2px 8px;border-radius:12px;
+}
+.badge-deficit{background:rgba(191,64,32,.12);color:var(--red)}
+.badge-ok{background:rgba(76,164,86,.1);color:#2d7a35}
+
+@media(max-width:560px){
+  .topbar-inner{padding:10px 16px}
+  .inst-bar{padding:5px 16px}
+  .onboarding{padding:28px 16px 40px}
+  .dashboard{padding:20px 16px 40px}
+  .journey-bar{padding:0 8px}
+}
+
+.home-btn{
+  display:flex;align-items:center;gap:5px;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
+  color:rgba(255,255,255,.75);text-decoration:none;
+  padding:5px 12px;border-radius:20px;
+  border:1px solid rgba(255,255,255,.25);
+  transition:background .15s,color .15s;cursor:pointer;background:transparent;
+}
+.home-btn:hover{background:rgba(255,255,255,.12);color:#fff;}
+</style>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <img class="topbar-logo" src="https://portal.ufrrj.br/wp-content/uploads/2018/06/logo-ufrrj.png"
+           alt="UFRRJ" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="topbar-logo-fallback" style="display:none">UFRRJ</div>
+      <div class="topbar-divider"></div>
+      <div>
+        <div class="topbar-title">APO Lab · Planejamento agregado</div>
+        <div class="topbar-sub">Ambiente simulado de Produção e Operações</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-restart" onclick="restartOnboarding()">↺ Recomeçar</button>
+    
+    <button class="home-btn" onclick="voltarHome()" title="Voltar ao APO Lab">🏠 Home</button>
+  </div>
+  </div>
+  <div class="inst-bar">
+    <span>Universidade Federal Rural do Rio de Janeiro</span>
+    <span class="inst-sep">·</span>
+    <span>Curso de Administração · Campus Nova Iguaçu</span>
+    <span class="inst-sep">·</span>
+    <span>Baseado nas disciplinas da área de Produção e Operações</span>
+  </div>
+</div>
+
+<!-- JOURNEY BAR -->
+<div class="journey-bar" id="journeyBar">
+  <button class="journey-back" onclick="voltarApoLab()">← APO Lab</button>
+  <span class="journey-sep">|</span>
+  <div class="journey-steps" id="journeySteps"></div>
+  <div class="journey-product" id="journeyProduct" style="display:none"></div>
+</div>
+
+<!-- MAIN -->
+<div class="main-content" id="mainContent">
+
+  <!-- ONBOARDING -->
+  <div class="onboarding" id="onboarding">
+
+    <!-- STEP 1: product -->
+    <div class="step active" id="step1">
+      <div class="step-header">
+        <h1>Planejamento Agregado</h1>
+        <p>O planejamento agregado concilia capacidade produtiva e previsão de demanda num horizonte de médio prazo (12 meses). O produto já foi selecionado na tela inicial.</p>
+      </div>
+      <div class="tip">
+        Planejamento agregado opera com unidades agregadas — famílias de produtos, horas-homem ou capacidade instalada — num horizonte de 3 a 18 meses, equilibrando oferta e demanda de forma eficiente e econômica. (Moreira, 1998)
+      </div>
+      <div class="step-nav">
+        <span></span>
+        <button class="btn btn-primary" onclick="launchDashboard()">Simular →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="dashboard" id="dashboard">
+
+    <div class="context-pill" id="contextPill"></div>
+
+    <div class="strategy-switcher" id="strategySwitcher">
+      <button class="strat-btn active" id="strat-nivelamento" onclick="switchStrategy('nivelamento')">📊 Nivelamento</button>
+      <button class="strat-btn" id="strat-acompanhamento" onclick="switchStrategy('acompanhamento')">🎯 Acompanhamento</button>
+      <button class="strat-btn" id="strat-mista" onclick="switchStrategy('mista')">⚖️ Mista</button>
+    </div>
+
+    <div class="dash-grid">
+      <!-- CHART -->
+      <div class="card">
+        <div class="card-title">Demanda vs. Produção Planejada</div>
+        <div class="chart-wrap"><canvas id="mainChart"></canvas></div>
+      </div>
+      <!-- COST COMPARISON -->
+      <div class="card">
+        <div class="card-title">Comparativo de Custos Totais</div>
+        <div class="cost-cards" id="costCards"></div>
+      </div>
+    </div>
+
+    <!-- TABLE -->
+    <div class="card" style="margin-bottom:20px">
+      <div class="card-title">Planejamento Mensal Detalhado</div>
+      <div class="table-wrap">
+        <table id="planTable">
+          <thead>
+            <tr>
+              <th style="text-align:left">Mês</th>
+              <th>Demanda</th>
+              <th>Produção</th>
+              <th>Estoque / Déficit</th>
+              <th>Funcionários</th>
+              <th>Custo acum. (R$)</th>
+            </tr>
+          </thead>
+          <tbody id="planTableBody"></tbody>
+          <tfoot id="planTableFoot"></tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- CONCEPT PANEL -->
+    <div class="section-title">Conceitos fundamentais</div>
+    <div class="concept-grid" id="conceptGrid"></div>
+
+  </div><!-- /dashboard -->
+</div><!-- /main-content -->
+
+<script>
+/* ── DATA ── */
+const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+
+const PRODUCT_DATA = {
+  isotonica:{
+    label:'Bebida Isotônica', icon:'🧃', modelo:'Produção em Massa',
+    sazonalidade:'Demanda sazonal com picos no verão (jan–fev) e inverno (jun–ago). Alta variação ao longo do ano exige estratégia cuidadosa de formação de estoque.',
+    demanda:[20000,22000,18000,16000,19000,24000,28000,27000,21000,17000,16000,18000],
+    capNivel:20667,
+    funcBase:18, prodFunc:1200,
+    custoContrat:2500, custoDemit:5000, custoHE:35,
+    custoEstoque:8, custoFalta:20,
+  },
+  sorvete:{
+    label:'Sorvete Premium', icon:'🍦', modelo:'Produção em Lote',
+    sazonalidade:'Alta sazonalidade — demanda concentrada no verão (jan, jun–set). Meses de inverno com demanda muito baixa. O custo de estoque elevado penaliza o nivelamento.',
+    demanda:[4500,3500,3000,3500,7000,14000,18000,16000,10000,6000,4000,4000],
+    capNivel:7958,
+    funcBase:6, prodFunc:1400,
+    custoContrat:3000, custoDemit:6000, custoHE:42,
+    custoEstoque:15, custoFalta:35,
+  },
+  farinha:{
+    label:'Farinha de Trigo', icon:'🌾', modelo:'Produção em Massa',
+    sazonalidade:'Demanda estável com leve tendência de crescimento. Baixa variação favorece o nivelamento com custo de estoque reduzido.',
+    demanda:[44000,45000,45000,46000,46000,47000,47000,48000,48000,49000,49000,50000],
+    capNivel:47000,
+    funcBase:22, prodFunc:2200,
+    custoContrat:2000, custoDemit:4000, custoHE:25,
+    custoEstoque:5, custoFalta:15,
+  },
+  farmaceutico:{
+    label:'Medicamento Genérico', icon:'💊', modelo:'Produção em Lote',
+    sazonalidade:[1.0,1.0,1.05,1.0,0.98,1.0,1.02,1.0,1.0,1.05,1.1,1.1],
+    demandaBase:480, custoRegular:28, custoExtra:42, custoEstoque:3.5, custoFalta:15,
+    capacidadeRegular:500, capacidadeMaxima:600,
+  },
+  autoeletrico:{
+    label:'Automóvel Elétrico', icon:'🚗', modelo:'Produção em Massa',
+    sazonalidade:'Crescimento gradual e contínuo. Alto custo de contratação e estoque torna a estratégia mista especialmente vantajosa neste setor.',
+    demanda:[900,950,1000,1050,1100,1150,1200,1250,1300,1350,1400,1450],
+    capNivel:1175,
+    funcBase:12, prodFunc:100,
+    custoContrat:8000, custoDemit:15000, custoHE:180,
+    custoEstoque:2000, custoFalta:5000,
+  },
+  projeto:{
+    label:'Construção sob encomenda', icon:'🏗️', modelo:'Produção por Projeto',
+    sazonalidade:'Demanda discreta e irregular — cada unidade é um projeto único. O custo de perder um contrato é muito alto; o estoque não se aplica ao modelo produtivo.',
+    demanda:[1,2,2,2,3,2,3,2,2,3,2,2],
+    capNivel:2,
+    funcBase:8, prodFunc:0.25,
+    custoContrat:5000, custoDemit:10000, custoHE:120,
+    custoEstoque:0, custoFalta:80000,
+  },
+};
+
+const STRATEGIES = {
+  nivelamento:{label:'Nivelamento', icon:'📊'},
+  acompanhamento:{label:'Acompanhamento', icon:'🎯'},
+  mista:{label:'Mista', icon:'⚖️'},
+};
+
+const JORNADA = [
+  {id:'demanda',     label:'Previsão de Demanda',   icon:'📈', url:'https://apo-previsao.netlify.app'},
+  {id:'localizacao', label:'Localização',            icon:'📍', url:'https://apo-localizacao.netlify.app'},
+  {id:'sistema',     label:'Modelo de Produção',     icon:'⚙️',  url:'https://apo-producao.netlify.app'},
+  {id:'capacidade',  label:'Capacidade Produtiva',   icon:'🏭', url:'https://apo-capacidade.netlify.app'},
+  {id:'arranjo',     label:'Arranjo Físico',         icon:'🗺️',  url:'https://apo-arranjo.netlify.app'},
+  {id:'agregado',    label:'Planejamento Agregado',  icon:'📅', url:null},
+  {id:'pmp',         label:'PMP',                   icon:'📋', url:null},
+  {id:'mrp',         label:'MRP / Estoques',        icon:'📦', url:null},
+  {id:'sequencia',   label:'Sequenciamento',        icon:'🔢', url:null},
+];
+const THIS_MODULE = 'agregado';
+const APOLAB_URL = 'https://apolab-ufrrj.netlify.app';
+
+/* ── STATE ── */
+const UP = new URLSearchParams(window.location.search);
+const URL_PRODUTO = UP.get('produto');
+const URL_ORIGEM  = UP.get('origem');
+const URL_VOLTAR  = UP.get('voltar');
+
+let STATE = {
+  product: URL_PRODUTO && PRODUCT_DATA[URL_PRODUTO] ? URL_PRODUTO : null,
+  strategy: 'nivelamento',
+};
+
+let chartInstance = null;
+
+/* ── JOURNEY BAR ── */
+function buildJourneyBar(){
+  const stepsEl = document.getElementById('journeySteps');
+  stepsEl.innerHTML = '';
+  JORNADA.forEach(step=>{
+    const isCurrent = step.id === THIS_MODULE;
+    const isDisabled = !step.url;
+    const div = document.createElement('div');
+    div.className = 'journey-step' + (isCurrent?' current':isDisabled?' disabled':' clickable');
+    div.textContent = step.icon+' '+step.label;
+    if(!isCurrent && step.url){
+      div.onclick = ()=>{
+        const params = new URLSearchParams({
+          produto: STATE.product||'',
+          modulo: step.id,
+          origem:'apolab',
+          voltar: window.location.href
+        });
+        window.location.href = step.url+'?'+params.toString();
+      };
+    }
+    stepsEl.appendChild(div);
+  });
+  if(STATE.product){
+    const pd = PRODUCT_DATA[STATE.product];
+    const pill = document.getElementById('journeyProduct');
+    pill.textContent = pd.icon+' '+pd.label;
+    pill.style.display='block';
+  }
+}
+
+function showJourneyBar(){
+  const bar = document.getElementById('journeyBar');
+  bar.classList.add('visible');
+  document.getElementById('mainContent').classList.add('has-journey');
+  buildJourneyBar();
+}
+
+/* ── NAVIGATION ── */
+function goStep(n){
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  document.getElementById('step'+n).classList.add('active');
+}
+
+function selectProd(key, el){
+  STATE.product = key;
+  document.querySelectorAll('.product-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btnNext1').disabled = false;
+}
+
+function restartOnboarding(){
+  STATE.strategy = 'nivelamento';
+  document.getElementById('dashboard').classList.remove('visible');
+  document.getElementById('onboarding').style.display='block';
+  document.getElementById('journeyBar').classList.remove('visible');
+  document.getElementById('mainContent').classList.remove('has-journey');
+  document.querySelectorAll('.product-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('btnNext1').disabled = true;
+  goStep(1);
+  if(chartInstance){chartInstance.destroy();chartInstance=null;}
+}
+
+function voltarApoLab(){
+  window.location.href = URL_VOLTAR || APOLAB_URL;
+}
+
+function switchStrategy(key){
+  STATE.strategy = key;
+  // update button states
+  ['nivelamento','acompanhamento','mista'].forEach(k=>{
+    document.getElementById('strat-'+k).classList.toggle('active', k===key);
+  });
+  // re-render chart and table with new strategy
+  const pd = PRODUCT_DATA[STATE.product];
+  const results = {
+    nivelamento: simulateNivelamento(pd),
+    acompanhamento: simulateAcompanhamento(pd),
+    mista: simulateMista(pd),
+  };
+  const selected = results[key];
+  buildChart(pd, selected);
+  buildCostCards(results);
+  buildTable(selected);
+  // highlight active concept card
+  document.querySelectorAll('.concept-card').forEach(el=>{
+    el.classList.remove('active-concept');
+  });
+  const conceptCards = document.querySelectorAll('.concept-card');
+  const idx = ['nivelamento','acompanhamento','mista'].indexOf(key);
+  if(conceptCards[idx]) conceptCards[idx].classList.add('active-concept');
+}
+
+/* ── SIMULATION ENGINE ── */
+function fmt(n){
+  return n.toLocaleString('pt-BR');
+}
+function fmtBRL(n){
+  return 'R$ '+Math.round(n).toLocaleString('pt-BR');
+}
+
+function simulateNivelamento(pd){
+  const prod = Math.round(pd.capNivel);
+  const funcWorkers = Math.ceil(prod / pd.prodFunc);
+  let estoque = 0;
+  let totalEstoque = 0, totalFalta = 0;
+  const rows = [];
+  let custoAcum = 0;
+  for(let i=0;i<12;i++){
+    estoque = estoque + prod - pd.demanda[i];
+    let cEstoque = 0, cFalta = 0;
+    if(estoque >= 0){
+      cEstoque = estoque * pd.custoEstoque;
+      totalEstoque += cEstoque;
+    } else {
+      cFalta = Math.abs(estoque) * pd.custoFalta;
+      totalFalta += cFalta;
+      estoque = 0;
+    }
+    custoAcum += cEstoque + cFalta;
+    rows.push({
+      mes:MESES[i],
+      demanda:pd.demanda[i],
+      producao:prod,
+      estoque: estoque>=0 ? estoque : -(Math.abs(estoque + prod - pd.demanda[i])),
+      estoqueReal: estoque,
+      funcionarios:funcWorkers,
+      custoMes: cEstoque+cFalta,
+      custoAcum: Math.round(custoAcum),
+      hasDeficit: (estoque === 0 && (0 + prod - pd.demanda[i]) < 0),
+      hasExcess: estoque > pd.demanda[i]*0.2,
+    });
+    // recalc estoque for display
+    rows[i].estoqueVal = (0 + prod - pd.demanda[i]) < 0 ? (0 + prod - pd.demanda[i]) : estoque;
+  }
+  // recalc estoque column properly
+  let e2=0;
+  for(let i=0;i<12;i++){
+    e2 = e2 + prod - pd.demanda[i];
+    rows[i].estoqueDisplay = e2;
+    if(e2 < 0){e2=0;}
+    rows[i].hasDeficit2 = rows[i].estoqueDisplay < 0;
+    rows[i].hasExcess2  = rows[i].estoqueDisplay > pd.demanda[i]*0.2;
+  }
+  return {
+    rows,
+    total: Math.round(totalEstoque+totalFalta),
+    custoEstoque: Math.round(totalEstoque),
+    custoPessoal: 0,
+    custoFalta: Math.round(totalFalta),
+    producoes: rows.map(r=>r.producao),
+  };
+}
+
+function simulateAcompanhamento(pd){
+  let funcAtual = pd.funcBase;
+  let totalPessoal = 0;
+  const rows = [];
+  let custoAcum = 0;
+  for(let i=0;i<12;i++){
+    const funcNec = Math.ceil(pd.demanda[i] / pd.prodFunc);
+    let cPessoal = 0;
+    if(funcNec > funcAtual) cPessoal = (funcNec - funcAtual) * pd.custoContrat;
+    else if(funcNec < funcAtual) cPessoal = (funcAtual - funcNec) * pd.custoDemit;
+    totalPessoal += cPessoal;
+    funcAtual = funcNec;
+    custoAcum += cPessoal;
+    rows.push({
+      mes:MESES[i],
+      demanda:pd.demanda[i],
+      producao:pd.demanda[i],
+      estoqueDisplay:0,
+      hasDeficit2:false,
+      hasExcess2:false,
+      funcionarios:funcNec,
+      custoMes:cPessoal,
+      custoAcum:Math.round(custoAcum),
+    });
+  }
+  return {
+    rows,
+    total: Math.round(totalPessoal),
+    custoEstoque:0,
+    custoPessoal: Math.round(totalPessoal),
+    custoFalta:0,
+    producoes: rows.map(r=>r.producao),
+  };
+}
+
+function simulateMista(pd){
+  // smoothed production via 3-month centred moving average
+  const smoothed = pd.demanda.map((_,i)=>{
+    const a = pd.demanda[Math.max(0,i-1)];
+    const b = pd.demanda[i];
+    const c = pd.demanda[Math.min(11,i+1)];
+    return Math.round((a+b+c)/3);
+  });
+  let estoque = 0;
+  let totalEstoque=0, totalFalta=0, totalPessoal=0;
+  let funcAtual = pd.funcBase;
+  const rows = [];
+  let custoAcum = 0;
+  // track estoque with display
+  let eDisplay = 0;
+  for(let i=0;i<12;i++){
+    const prod = smoothed[i];
+    eDisplay = eDisplay + prod - pd.demanda[i];
+    let cEstoque=0, cFalta=0, cPessoal=0;
+    if(eDisplay >= 0){
+      cEstoque = eDisplay * pd.custoEstoque;
+      totalEstoque += cEstoque;
+    } else {
+      cFalta = Math.abs(eDisplay) * pd.custoFalta;
+      totalFalta += cFalta;
+      eDisplay = 0;
+    }
+    // workforce adjustment at half sensitivity
+    const funcNec = Math.ceil(prod / pd.prodFunc);
+    if(funcNec > funcAtual) cPessoal = (funcNec - funcAtual) * pd.custoContrat * 0.5;
+    else if(funcNec < funcAtual) cPessoal = (funcAtual - funcNec) * pd.custoDemit * 0.5;
+    totalPessoal += cPessoal;
+    funcAtual = funcNec;
+    custoAcum += cEstoque+cFalta+cPessoal;
+    rows.push({
+      mes:MESES[i],
+      demanda:pd.demanda[i],
+      producao:prod,
+      estoqueDisplay: eDisplay < 0 ? (eDisplay + prod - pd.demanda[i]) : eDisplay,
+      hasDeficit2: eDisplay===0 && (eDisplay + prod - pd.demanda[i]) < 0,
+      hasExcess2: eDisplay > pd.demanda[i]*0.2,
+      funcionarios:funcNec,
+      custoMes:Math.round(cEstoque+cFalta+cPessoal),
+      custoAcum:Math.round(custoAcum),
+    });
+    // correct eDisplay after forced reset
+    let tmp = 0;
+    for(let j=0;j<=i;j++){
+      tmp = tmp + smoothed[j] - pd.demanda[j];
+      if(tmp<0) tmp=0;
+    }
+    eDisplay = tmp;
+  }
+  return {
+    rows,
+    total: Math.round(totalEstoque+totalFalta+totalPessoal),
+    custoEstoque: Math.round(totalEstoque),
+    custoPessoal: Math.round(totalPessoal),
+    custoFalta: Math.round(totalFalta),
+    producoes: smoothed,
+  };
+}
+
+function runSim(strategy, pd){
+  if(strategy==='nivelamento') return simulateNivelamento(pd);
+  if(strategy==='acompanhamento') return simulateAcompanhamento(pd);
+  return simulateMista(pd);
+}
+
+/* ── DASHBOARD ── */
+function launchDashboard(){
+  const pd = PRODUCT_DATA[STATE.product];
+  document.getElementById('onboarding').style.display='none';
+  document.getElementById('dashboard').classList.add('visible');
+  showJourneyBar();
+
+  // ensure default strategy button state
+  ['nivelamento','acompanhamento','mista'].forEach(k=>{
+    document.getElementById('strat-'+k).classList.toggle('active', k===STATE.strategy);
+  });
+
+  // run all 3 strategies for comparison
+  const results = {
+    nivelamento: simulateNivelamento(pd),
+    acompanhamento: simulateAcompanhamento(pd),
+    mista: simulateMista(pd),
+  };
+  const selected = results[STATE.strategy];
+
+  // Context pill — product only (strategy is shown in switcher)
+  const pill = document.getElementById('contextPill');
+  pill.innerHTML = `
+    <span>${pd.icon} <strong>${pd.label}</strong></span>
+    <span class="cp-sep">·</span>
+    <span style="font-size:12px;color:var(--muted)">${pd.sazonalidade}</span>
+  `;
+
+  // Chart
+  buildChart(pd, selected);
+
+  // Cost comparison
+  buildCostCards(results);
+
+  // Table
+  buildTable(selected);
+
+  // Concept panel
+  buildConceptPanel();
+}
+
+function buildChart(pd, result){
+  if(chartInstance){chartInstance.destroy();}
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  // detect dark mode
+  const isDark = document.documentElement.dataset.theme==='dark' ||
+    (!document.documentElement.dataset.theme && window.matchMedia('(prefers-color-scheme:dark)').matches);
+  const gridColor = isDark ? 'rgba(255,255,255,.07)' : 'rgba(0,0,0,.07)';
+  const labelColor = isDark ? '#9a9186' : '#756e62';
+
+  chartInstance = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:MESES,
+      datasets:[
+        {
+          type:'bar',
+          label:'Demanda',
+          data:pd.demanda,
+          backgroundColor:'rgba(10,50,92,.18)',
+          borderColor:'rgba(10,50,92,.5)',
+          borderWidth:1.5,
+          order:2,
+        },
+        {
+          type:'line',
+          label:'Produção Planejada',
+          data:result.producoes,
+          borderColor:'#4ca456',
+          backgroundColor:'rgba(76,164,86,.1)',
+          borderWidth:2.5,
+          pointRadius:4,
+          pointBackgroundColor:'#4ca456',
+          tension:0.3,
+          fill:false,
+          order:1,
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{
+        legend:{
+          labels:{color:labelColor,font:{family:'DM Sans',size:12},boxWidth:14,padding:16}
+        },
+        tooltip:{
+          callbacks:{
+            label: ctx=>{
+              return ctx.dataset.label+': '+fmt(ctx.parsed.y)+' unid.';
+            }
+          }
+        }
+      },
+      scales:{
+        x:{
+          grid:{color:gridColor},
+          ticks:{color:labelColor,font:{family:'DM Mono',size:11}}
+        },
+        y:{
+          grid:{color:gridColor},
+          ticks:{color:labelColor,font:{family:'DM Mono',size:11},
+            callback: v=>fmt(v)
+          },
+          title:{display:true,text:'Unidades',color:labelColor,font:{family:'DM Sans',size:11}}
+        }
+      }
+    }
+  });
+}
+
+function buildCostCards(results){
+  const el = document.getElementById('costCards');
+  el.innerHTML='';
+  ['nivelamento','acompanhamento','mista'].forEach(k=>{
+    const r = results[k];
+    const s = STRATEGIES[k];
+    const isActive = k === STATE.strategy;
+    const div = document.createElement('div');
+    div.className = 'cost-row'+(isActive?' active':'');
+    const breakdownParts = [];
+    if(r.custoEstoque>0) breakdownParts.push('Estoque: '+fmtBRL(r.custoEstoque));
+    if(r.custoFalta>0)   breakdownParts.push('Falta: '+fmtBRL(r.custoFalta));
+    if(r.custoPessoal>0) breakdownParts.push('Pessoal: '+fmtBRL(r.custoPessoal));
+    div.innerHTML=`
+      <div class="cr-icon">${s.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div class="cr-name">${s.label}</div>
+        <div class="cost-breakdown">${breakdownParts.join(' · ')}</div>
+      </div>
+      <div class="cr-total">${fmtBRL(r.total)}</div>
+    `;
+    el.appendChild(div);
+  });
+}
+
+function buildTable(result){
+  const tbody = document.getElementById('planTableBody');
+  const tfoot = document.getElementById('planTableFoot');
+  tbody.innerHTML='';
+  let totalCusto = 0;
+  result.rows.forEach(row=>{
+    const tr = document.createElement('tr');
+    const eVal = row.estoqueDisplay;
+    const eStr = eVal > 0
+      ? '<span class="badge badge-ok">+'+fmt(eVal)+'</span>'
+      : eVal < 0
+        ? '<span class="badge badge-deficit">'+fmt(eVal)+'</span>'
+        : '0';
+    tr.className = row.hasDeficit2 ? 'row-deficit' : row.hasExcess2 ? 'row-excess' : '';
+    totalCusto = row.custoAcum;
+    tr.innerHTML=`
+      <td>${row.mes}</td>
+      <td>${fmt(row.demanda)}</td>
+      <td>${fmt(row.producao)}</td>
+      <td>${eStr}</td>
+      <td>${fmt(row.funcionarios)}</td>
+      <td>${fmtBRL(row.custoAcum)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tfoot.innerHTML=`
+    <tr>
+      <td><strong>Total</strong></td>
+      <td>${fmt(result.rows.reduce((a,r)=>a+r.demanda,0))}</td>
+      <td>${fmt(result.rows.reduce((a,r)=>a+r.producao,0))}</td>
+      <td>—</td>
+      <td>—</td>
+      <td><strong>${fmtBRL(totalCusto)}</strong></td>
+    </tr>
+  `;
+}
+
+function buildConceptPanel(){
+  const el = document.getElementById('conceptGrid');
+  el.innerHTML='';
+  const concepts = [
+    {
+      key:'nivelamento',
+      icon:'📊',
+      name:'Nivelamento',
+      body:`<strong>Definição:</strong> mantém a taxa de produção constante ao longo do horizonte, utilizando o estoque como pulmão para absorver as flutuações da demanda.<br><br><strong>Quando usar:</strong> indicado quando o custo de contratação e demissão é alto e a demanda apresenta sazonalidade previsível. O estoque funciona como instrumento de amortecimento.<br><br><strong>Limitação:</strong> exige espaço de armazenagem e implica custo financeiro dos estoques. Déficits ocorrem quando a produção nivelada está abaixo de picos de demanda.`,
+    },
+    {
+      key:'acompanhamento',
+      icon:'🎯',
+      name:'Acompanhamento',
+      body:`<strong>Definição:</strong> a taxa de produção varia mensalmente para acompanhar as flutuações da demanda, com ajustes no quadro de pessoal por meio de contratações, demissões e horas extras.<br><br><strong>Quando usar:</strong> adequado quando o custo de estoque supera o custo de ajuste de mão de obra, ou quando o produto não pode ser estocado (serviços, perecíveis, projetos únicos).<br><br><strong>Limitação:</strong> acarreta custos trabalhistas elevados e pode impactar o clima organizacional e a qualidade da mão de obra.`,
+    },
+    {
+      key:'mista',
+      icon:'⚖️',
+      name:'Mista',
+      body:`<strong>Definição:</strong> combina variações moderadas na taxa de produção com formação parcial de estoque, equilibrando os custos de pessoal e de armazenagem ao longo do horizonte de planejamento.<br><br><strong>Quando usar:</strong> recomendada quando nenhuma das estratégias puras é visivelmente superior, ou quando há restrições tanto para estoques elevados quanto para alterações bruscas no quadro de pessoal.<br><br><strong>Limitação:</strong> a determinação do ponto ótimo de equilíbrio requer análise de sensibilidade detalhada dos parâmetros de custo.`,
+    },
+  ];
+  concepts.forEach(c=>{
+    const div = document.createElement('div');
+    div.className = 'concept-card'+(c.key===STATE.strategy?' active-concept':'');
+    div.innerHTML=`
+      <div class="cc-header">
+        <span class="cc-icon">${c.icon}</span>
+        <span class="cc-name">${c.name}</span>
+      </div>
+      <div class="cc-body">${c.body}</div>
+      <div class="cc-ref">MOREIRA, D. A. Administração da produção e operações. São Paulo: Pioneira, 1998.</div>
+    `;
+    el.appendChild(div);
+  });
+}
+
+/* ── AUTO-SKIP ── */
+window.addEventListener('load',()=>{
+  if(URL_PRODUTO && PRODUCT_DATA[URL_PRODUTO]){
+    STATE.product = URL_PRODUTO;
+  }
+  launchDashboard();
+});
+</script>

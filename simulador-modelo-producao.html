@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Modelo de Produção · APO Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#12100e;--paper:#f7f4ee;--cream:#ede9df;
+  --red:#bf4020;--blue:#1d4e8f;--green:#1a7a5e;--gold:#b8860b;
+  --purple:#0a325c;--muted:#756e62;--border:#cec8bc;--white:#fff;
+  --shadow-sm:0 1px 4px rgba(18,16,14,.07);
+  --shadow:0 3px 14px rgba(18,16,14,.10);
+  --shadow-lg:0 8px 32px rgba(18,16,14,.14);
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.6}
+
+/* TOPBAR */
+.topbar{background:#0a325c;color:var(--paper);padding:0;position:fixed;top:0;left:0;right:0;z-index:200;border-bottom:4px solid #4ca456}
+.topbar-inner{padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.topbar-left{display:flex;align-items:center;gap:18px}
+.topbar-logo{height:48px;width:auto;filter:brightness(0) invert(1) drop-shadow(0 0 2px rgba(255,255,255,.6));opacity:1;flex-shrink:0}
+.topbar-logo-fallback{display:none;font-family:'Fraunces',serif;font-size:18px;font-weight:900;color:white;letter-spacing:-.5px;line-height:1}
+.topbar-divider{width:1px;height:40px;background:rgba(255,255,255,.2);flex-shrink:0}
+.topbar-title{font-family:'Fraunces',serif;font-size:20px;font-weight:900;letter-spacing:-.3px;line-height:1.2}
+.topbar-sub{font-size:11px;color:#bbb;letter-spacing:.6px;margin-top:3px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.inst-bar{background:#062848;border-top:1px solid rgba(255,255,255,.1);padding:5px 28px;display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.3px;flex-wrap:wrap}
+.inst-sep{color:#555;margin:0 3px}
+.btn-restart{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;border:1.5px solid #555;background:transparent;color:#ccc;cursor:pointer;transition:all .2s}
+.btn-restart:hover{border-color:#aaa;color:white}
+
+/* JOURNEY BAR */
+.journey-bar{position:fixed;top:96px;left:0;right:0;z-index:190;background:#0d1f35;border-bottom:2px solid #4ca456;padding:0 20px;display:none;align-items:center;justify-content:space-between;gap:12px;height:56px}
+.jb-left{display:flex;align-items:center;gap:10px;min-width:0}
+.jb-back{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.25);background:transparent;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.jb-back:hover{border-color:#fff;color:white}
+.jb-steps{display:flex;align-items:center;overflow-x:auto;scrollbar-width:none}
+.jb-steps::-webkit-scrollbar{display:none}
+.jb-step{display:flex;align-items:center;gap:5px;padding:5px 11px;font-size:13px;font-weight:500;color:rgba(255,255,255,.8);white-space:nowrap;flex-shrink:0;border-radius:20px}
+.jb-step.current{color:#fff;background:#0a325c;border:2px solid #4ca456;font-weight:700}
+.jb-step.done{color:#4ca456}
+.jb-step.clickable{cursor:pointer;}
+.jb-step.clickable:hover{background:rgba(255,255,255,0.12);}
+.jb-step-icon{font-size:12px}
+.jb-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.jb-product{font-size:12px;font-weight:700;color:#fff;background:#4ca456;padding:4px 13px;border-radius:20px;border:none}
+.jb-nav-btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.6);cursor:pointer;white-space:nowrap;transition:all .2s}
+.jb-nav-btn:hover{border-color:rgba(255,255,255,.5);color:#fff}
+.jb-nav-btn.active{border-color:#4ca456;color:#4ca456}
+.jb-nav-btn.active:hover{background:#4ca456;color:white}
+
+/* WRAPPER */
+.app{padding-top:96px;min-height:100vh}
+.app.has-journey{padding-top:152px}
+
+/* ONBOARDING */
+#onboarding{position:fixed;inset:0;top:96px;background:var(--paper);z-index:100;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px 60px}
+.app.has-journey #onboarding{top:152px}
+.ob-card{width:100%;max-width:800px;animation:slideUp .45s cubic-bezier(.22,1,.36,1) both}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.ob-step-label{display:inline-flex;align-items:center;gap:8px;font-size:10px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.ob-step-num{width:22px;height:22px;border-radius:50%;background:var(--purple);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ob-title{font-family:'Fraunces',serif;font-size:30px;font-weight:900;line-height:1.15;margin-bottom:8px}
+.ob-subtitle{font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.5;max-width:600px}
+.ob-tip{background:var(--cream);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:24px}
+.ob-tip strong{color:var(--ink)}
+.ob-nav{display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+.btn-back-ob{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:10px 20px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s}
+.btn-back-ob:hover{border-color:var(--ink);color:var(--ink)}
+.btn-next{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:11px 28px;border-radius:8px;border:none;background:var(--purple);color:white;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px}
+.btn-next:hover{background:#5a2f8f;transform:translateY(-1px)}
+.btn-next:disabled{background:#ccc;cursor:not-allowed;transform:none}
+.btn-launch{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:13px 32px;border-radius:8px;border:none;background:var(--ink);color:white;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px}
+.btn-launch:hover{background:#2a2520;transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+
+/* SLIDER CARDS DOS 4 V's */
+.v4-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:28px}
+.v4-card{background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:20px 18px}
+.v4-header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.v4-icon{font-size:24px}
+.v4-name{font-weight:700;font-size:15px}
+.v4-def{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:14px}
+.v4-slider-row{display:flex;align-items:center;gap:10px}
+.v4-slider{flex:1;accent-color:var(--purple)}
+.v4-val{font-family:'DM Mono',monospace;font-size:13px;font-weight:600;color:var(--purple);min-width:28px;text-align:right}
+.v4-poles{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);margin-top:4px;font-weight:600;letter-spacing:.3px}
+
+/* PRODUTO CARDS (step 1) */
+.prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+.prod-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:28px}
+.prod-card{background:var(--white);border:2px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s;position:relative}
+.prod-card:hover{border-color:var(--purple);transform:translateY(-2px);box-shadow:var(--shadow)}
+.prod-card.selected{border-color:var(--purple);background:#f8f5ff}
+.prod-card.selected::after{content:'✓';position:absolute;top:8px;right:10px;font-size:12px;font-weight:700;color:var(--purple)}
+.pc-icon{font-size:24px;margin-bottom:6px}
+.pc-name{font-weight:700;font-size:13px}
+.pc-sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* RESULTADO DO PERFIL */
+.profile-result{background:var(--white);border:2px solid var(--purple);border-radius:var(--r);padding:20px;margin-bottom:24px}
+.pr-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.pr-icon{font-size:32px}
+.pr-title{font-family:'Fraunces',serif;font-size:20px;font-weight:900}
+.pr-sub{font-size:12px;color:var(--muted);margin-top:2px}
+.pr-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.pr-tag{font-size:10px;font-weight:600;padding:3px 10px;border-radius:20px}
+.tag-proj{background:#ede9fe;color:#5b21b6}
+.tag-job{background:#dbeafe;color:#1e40af}
+.tag-batch{background:#fef3c7;color:#92400e}
+.tag-mass{background:#d1fae5;color:#065f46}
+.tag-cont{background:#fee2e2;color:#991b1b}
+
+/* DASHBOARD */
+#dashboard{display:none}
+.dash-layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 96px)}
+.app.has-journey .dash-layout{min-height:calc(100vh - 152px)}
+.dash-sidebar{background:var(--cream);border-right:1px solid var(--border);padding:20px 16px;overflow-y:auto;overflow-x:visible;position:sticky;top:96px;max-height:calc(100vh - 96px)}
+.app.has-journey .dash-sidebar{top:152px;max-height:calc(100vh - 152px)}
+.sb-lbl{font-size:9px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.sb-section{margin-bottom:20px}
+.ctx-pill{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12px}
+.ctx-pill-row{display:flex;justify-content:space-between;align-items:baseline}
+.ctx-pill-key{font-size:10px;color:var(--muted);font-weight:600}
+.ctx-pill-val{font-weight:600;font-size:12px}
+.view-tab-group{display:flex;flex-direction:column;gap:5px}
+.v-tab{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:7px;cursor:pointer;border:1.5px solid transparent;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);transition:all .2s;text-align:left;width:100%}
+.v-tab:hover{background:rgba(107,63,160,.06)}
+.v-tab.active{background:var(--ink);color:white}
+.v-tab-icon{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.v-tab.active .v-tab-icon{background:rgba(255,255,255,.12)}
+.v-tab:not(.active) .v-tab-icon{background:rgba(18,16,14,.07)}
+.v-tab-name{font-weight:600;font-size:11px}
+.v-tab-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.v-tab.active .v-tab-sub{color:rgba(255,255,255,.55)}
+.btn-run{width:100%;margin-top:6px;padding:11px;background:var(--purple);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-run:hover{background:#5a2f8f;transform:translateY(-1px)}
+
+/* SLIDERS SIDEBAR */
+.ctrl-group{margin-bottom:12px}
+.ctrl-lbl-row{display:flex;align-items:center;margin-bottom:4px}
+.ctrl-lbl{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.3px}
+.ctrl-range{width:100%;accent-color:var(--purple)}
+.ctrl-range-row{display:flex;align-items:center;gap:8px}
+.ctrl-val{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--purple);min-width:20px;text-align:right}
+.ctrl-poles{display:flex;justify-content:space-between;font-size:9px;color:var(--muted);font-weight:600;margin-top:2px}
+
+/* MAIN */
+.dash-main{padding:24px 28px;overflow-y:auto}
+.method-banner{background:var(--white);border:1.5px solid var(--border);border-left:4px solid var(--purple);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;gap:14px;align-items:flex-start}
+.mb-icon{font-size:26px;flex-shrink:0;margin-top:2px}
+.mb-title{font-family:'Fraunces',serif;font-size:17px;font-weight:700;margin-bottom:3px}
+.mb-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.mb-tags{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.mb-tag{font-size:9px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--cream);color:var(--muted)}
+
+/* RADAR */
+.chart-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:18px;box-shadow:var(--shadow-sm)}
+.cc-title{font-family:'Fraunces',serif;font-size:15px;font-weight:700;margin-bottom:4px}
+.cc-sub{font-size:11px;color:var(--muted);margin-bottom:16px}
+canvas{max-height:340px}
+
+/* V CARDS */
+.v4-result-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.vr-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:14px;text-align:center;box-shadow:var(--shadow-sm)}
+.vr-card.hi{border-color:var(--purple)}
+.vr-icon{font-size:22px;margin-bottom:6px}
+.vr-name{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.vr-score{font-family:'DM Mono',monospace;font-size:24px;font-weight:600}
+.vr-card.hi .vr-score{color:var(--purple)}
+.vr-label{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* TIPOLOGIA */
+.tipo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:18px}
+.tipo-card{background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:14px 10px;text-align:center;transition:all .2s;position:relative}
+.tipo-card.match{border-color:var(--purple);background:#f8f5ff}
+.tipo-card.partial{border-color:var(--gold);background:#fffbf0}
+.tipo-icon{font-size:22px;margin-bottom:6px}
+.tipo-name{font-weight:700;font-size:11px;margin-bottom:4px}
+.tipo-desc{font-size:9px;color:var(--muted);line-height:1.4}
+.tipo-badge{position:absolute;top:-8px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap}
+.badge-match{background:var(--purple);color:white}
+.badge-partial{background:var(--gold);color:white}
+
+/* IMPLICAÇÕES */
+.impl-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.impl-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:16px}
+.impl-title{font-weight:700;font-size:12px;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.impl-list{list-style:none;display:flex;flex-direction:column;gap:6px}
+.impl-list li{font-size:11px;color:var(--muted);line-height:1.5;display:flex;gap:6px;align-items:flex-start}
+.impl-list li::before{content:'→';color:var(--purple);font-weight:700;flex-shrink:0;margin-top:1px}
+
+/* COMPARAÇÃO */
+.comp-table-wrap{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:18px}
+.comp-table-header{padding:12px 18px;background:var(--cream);border-bottom:1px solid var(--border);font-weight:600;font-size:12px}
+table{width:100%;border-collapse:collapse}
+thead th{padding:9px 12px;text-align:left;font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);background:var(--cream);border-bottom:1px solid var(--border)}
+tbody td{padding:9px 12px;font-size:11px;border-bottom:1px solid var(--border);line-height:1.4}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--cream)}
+td.highlight{color:var(--purple);font-weight:700}
+.dot-hi{color:var(--purple);font-weight:700}
+.dot-md{color:var(--gold);font-weight:700}
+.dot-lo{color:var(--muted);font-weight:700}
+
+/* INSIGHT */
+.insight-box{background:linear-gradient(135deg,#f5f0ff,#f0f4fb);border:1.5px solid #c8b8e8;border-radius:var(--r);padding:16px 20px;margin-bottom:18px}
+.insight-title{font-weight:700;font-size:13px;color:var(--purple);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.insight-text{font-size:12px;color:var(--ink);line-height:1.7}
+.insight-text strong{color:var(--purple)}
+
+/* TOOLTIPS */
+.tip-wrap{position:relative;display:inline-flex;align-items:center}
+.tip-icon{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:var(--border);color:var(--muted);font-size:9px;font-weight:700;cursor:help;flex-shrink:0;margin-left:5px;transition:background .15s;font-style:normal}
+.tip-wrap:hover .tip-icon{background:var(--purple);color:white}
+.tip-balloon{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);width:230px;background:var(--ink);color:var(--paper);border-radius:8px;padding:10px 13px;font-size:11px;line-height:1.6;pointer-events:none;opacity:0;transition:opacity .18s;z-index:999;font-family:'DM Sans',sans-serif;box-shadow:var(--shadow-lg)}
+.tip-balloon::before{content:'';position:absolute;right:100%;top:50%;transform:translateY(-50%);border:6px solid transparent;border-right-color:var(--ink)}
+.tip-balloon strong{color:#fbbf24}
+.tip-wrap:hover .tip-balloon{opacity:1}
+
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;animation:spin .55s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade-in{animation:fadeIn .35s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-icon{font-size:44px;margin-bottom:12px}
+
+@media(max-width:860px){
+  .dash-layout{grid-template-columns:1fr}
+  .v4-result-grid{grid-template-columns:repeat(2,1fr)}
+  .tipo-grid{grid-template-columns:repeat(2,1fr)}
+  .impl-grid{grid-template-columns:1fr}
+  .v4-grid{grid-template-columns:1fr}
+  .prod-grid{grid-template-columns:1fr 1fr}
+}
+
+.home-btn{
+  display:flex;align-items:center;gap:5px;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
+  color:rgba(255,255,255,.75);text-decoration:none;
+  padding:5px 12px;border-radius:20px;
+  border:1px solid rgba(255,255,255,.25);
+  transition:background .15s,color .15s;cursor:pointer;background:transparent;
+}
+.home-btn:hover{background:rgba(255,255,255,.12);color:#fff;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <img class="topbar-logo" src="https://institucional.ufrrj.br/ccs/files/2019/06/rural_logo01.png" alt="UFRRJ" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="topbar-logo-fallback">UFRRJ</div>
+      <div class="topbar-divider"></div>
+      <div>
+        <div class="topbar-title">APO Lab · Modelos de produção</div>
+        <div class="topbar-sub">Ambiente simulado de Produção e Operações</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-restart" onclick="restartOnboarding()">↺ Reiniciar</button>
+    
+    <button class="home-btn" onclick="voltarHome()" title="Voltar ao APO Lab">🏠 Home</button>
+  </div>
+  </div>
+  <div class="inst-bar">
+    <span>Universidade Federal Rural do Rio de Janeiro</span>
+    <span class="inst-sep">·</span>
+    <span>Curso de Administração · Campus Nova Iguaçu</span>
+    <span class="inst-sep">·</span>
+    <span>Baseado nas disciplinas da área de Produção e Operações</span>
+  </div>
+</header>
+
+<div class="journey-bar" id="journeyBar">
+  <div class="jb-left">
+    <button class="jb-back" onclick="voltarApoLab()">← APO Lab</button>
+    <div class="jb-steps" id="jbSteps"></div>
+  </div>
+  <div class="jb-right">
+    <div class="jb-product" id="jbProduct"></div>
+    <button class="jb-nav-btn" onclick="irModulo('localizacao')">← Localização</button>
+    <button class="jb-nav-btn active" onclick="irModulo('capacidade')">Capacidade →</button>
+  </div>
+</div>
+
+<div class="app" id="appWrap">
+<div id="onboarding">
+<div class="ob-card" id="obCard">
+
+  <!-- STEP 1: PRODUTO -->
+  <div id="step1">
+    <div class="ob-step-label"><div class="ob-step-num">1</div>Etapa 1 de 2</div>
+    <div class="ob-title">Modelos de Produção</div>
+    <div class="ob-subtitle">O modelo de produção adequado depende das características do produto e do mercado. Vamos analisar o perfil dos 4 V's para identificar o sistema produtivo mais adequado.</div>
+    <div class="ob-tip"><strong>O que são os 4 V's?</strong> Volume, Variedade, Variação da demanda e Visibilidade são as quatro dimensões que definem o perfil de qualquer operação produtiva (SLACK; BRANDON-JONES; JOHNSTON, 2018; MOREIRA, 2012). Na literatura de APO, <em>visibilidade</em> refere-se ao grau de customização e de participação do cliente no processo produtivo. Cada dimensão impõe implicações diretas sobre custo, flexibilidade e complexidade do sistema.</div>
+    <div class="ob-nav">
+      <span></span>
+      <button class="btn-next" id="btnNext1" onclick="goStep(2)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: 4 V's SLIDERS -->
+  <div id="step2" style="display:none">
+    <div class="ob-step-label"><div class="ob-step-num">2</div>Etapa 2 de 2</div>
+    <div class="ob-title" id="step2title">Defina o perfil dos 4 V's</div>
+    <div class="ob-subtitle">Ajuste os sliders conforme as características do produto. Os valores já estão pré-carregados com base no produto escolhido, mas você pode alterá-los para explorar diferentes cenários.</div>
+    <div class="ob-tip" id="step2tip"></div>
+
+    <div class="v4-grid" id="v4sliders">
+      <!-- preenchido por JS -->
+    </div>
+
+    <div class="ob-nav">
+      <button class="btn-back-ob" onclick="goStep(1)">← Voltar</button>
+      <button class="btn-launch" onclick="launchDashboard()"><span>🚀</span> Analisar Perfil</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="dash-layout">
+    <aside class="dash-sidebar">
+      <div class="sb-section">
+        <div class="sb-lbl">Produto analisado</div>
+        <div class="ctx-pill" id="ctxPill"></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-lbl">Ajustar os 4 V's</div>
+        <div id="sidebarSliders"></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-lbl">Visualização</div>
+        <div class="view-tab-group" id="viewTabs"></div>
+      </div>
+      <button class="btn-run" onclick="runAnalysis()" id="btnRun">
+        <span>▶</span> Atualizar Análise
+      </button>
+    </aside>
+    <main class="dash-main" id="dashMain">
+      <div class="empty-state fade-in">
+        <div class="empty-icon">⚙️</div>
+        <div>Ajuste os parâmetros e clique em <strong>Atualizar Análise</strong></div>
+      </div>
+    </main>
+  </div>
+</div>
+</div>
+
+<script>
+// ── URL PARAMS ──
+const UP = new URLSearchParams(window.location.search);
+const URL_PRODUTO = UP.get('produto');
+const URL_ORIGEM  = UP.get('origem');
+const URL_VOLTAR  = UP.get('voltar');
+
+const JORNADA = [
+  {id:'demanda',    icon:'📈', name:'Previsão',    url:'https://apo-previsao.netlify.app'},
+  {id:'localizacao',icon:'📍', name:'Localização', url:'https://apo-localizacao.netlify.app'},
+  {id:'modelo',     icon:'⚙️', name:'Modelo Prod.',url:'https://apo-producao.netlify.app'},
+  {id:'capacidade', icon:'⚡', name:'Capacidade',  url:'https://apo-capacidade.netlify.app'},
+  {id:'arranjo',    icon:'🏭', name:'Arranjo',     url:'https://apo-arranjo.netlify.app'},
+  {id:'agregado',   icon:'📋', name:'Pl. Agr.',    url:null},
+  {id:'pmp',        icon:'📅', name:'PMP',         url:null},
+  {id:'mrp',        icon:'🔩', name:'MRP',         url:null},
+  {id:'sequencia',  icon:'🗓️', name:'Sequen.',     url:null},
+];
+
+const PRODUCT_NAMES = {isotonica:'🧃 Isotônica',sorvete:'🍦 Sorvete',farinha:'🌾 Farinha',farmaceutico:'💊 Medicamento',autoeletrico:'🚗 Automóvel Elétrico',projeto:'🏗️ Projeto'};
+
+const PRODUCT_PROFILES = {
+  isotonica: {
+    nome:'Bebida Isotônica', icon:'🧃',
+    volume:5, variedade:2, variacao:3, visibilidade:1,
+    contexto:'Produção em larga escala com poucos SKUs. Demanda com sazonalidade moderada (pico no verão). Processo altamente automatizado e padronizado. Produto sem customização: o consumidor não influencia o projeto do produto.',
+    tipoIdeal:'mass'
+  },
+  sorvete: {
+    nome:'Sorvete Premium', icon:'🍦',
+    volume:3, variedade:4, variacao:5, visibilidade:2,
+    contexto:'Volume moderado com muita variedade de sabores e embalagens. Demanda fortemente sazonal (pico no verão). Produção organizada em lotes, com setup frequente entre um sabor e outro. Baixo grau de customização: a variedade é do portfólio, não do pedido do cliente.',
+    tipoIdeal:'batch'
+  },
+  farinha: {
+    nome:'Farinha de Trigo', icon:'🌾',
+    volume:5, variedade:1, variacao:1, visibilidade:1,
+    contexto:'Commodity com altíssimo volume e nenhuma variedade relevante. Demanda estável ao longo do ano. Processo altamente automatizado e padronizado. Produto sem nenhum grau de customização.',
+    tipoIdeal:'mass'
+  },
+  farmaceutico: {
+    nome:'Medicamento Genérico', icon:'💊',
+    volume:3, variedade:2, variacao:1, visibilidade:2,
+    contexto:'Produção em batelada com controle rigoroso de lotes e rastreabilidade sanitária. Demanda estável e previsível. Sem customização pelo consumidor; alta padronização de processos exigida pela regulação.',
+    tipoIdeal:'batch'
+  },
+  autoeletrico: {
+    nome:'Automóvel Elétrico', icon:'🚗',
+    volume:4, variedade:4, variacao:2, visibilidade:3,
+    contexto:'Produção em linha com alto volume, mas com grande variedade de configurações (cor, bateria, acabamento). Demanda crescente e relativamente estável. O produto apresenta grau médio de customização: o cliente escolhe entre opções predefinidas, sem influenciar o projeto do produto.',
+    tipoIdeal:'mass'
+  },
+  projeto: {
+    nome:'Construção sob encomenda', icon:'🏗️',
+    volume:1, variedade:5, variacao:4, visibilidade:5,
+    contexto:'Cada obra é única. Volume unitário, variedade máxima, e altíssimo grau de customização: o cliente participa ativamente de todas as decisões de projeto, desde o escopo até os acabamentos.',
+    tipoIdeal:'project'
+  }
+};
+
+// Tipologias de sistemas produtivos (3 tipos clássicos da literatura de APO)
+const TIPOS = {
+  project: {
+    nome:'Produção por Projeto', icon:'🏗️',
+    desc:'Produto único, altamente customizado, produzido uma vez ou raramente. O cliente participa ativamente de todas as decisões.',
+    exemplos:'Obras de construção civil, navios, aeronaves sob encomenda, eventos, software customizado.',
+    caracteristicas:['Volume: unitário (1 ou poucos)','Variedade: máxima (cada produto é único)','Sequência de atividades variável','Recursos mobilizados em torno do produto','Alto grau de customização','Gestão via cronograma e estrutura analítica do projeto (EAP)'],
+    ref:'Slack, Brandon-Jones & Johnston (2018); Moreira (2012)'
+  },
+  batch: {
+    nome:'Produção em Lote', icon:'📦',
+    desc:'Produtos fabricados em grupos (lotes) de tamanho definido. Após a conclusão de um lote, a linha é reconfigurada para o próximo produto.',
+    exemplos:'Sorvetes, medicamentos, roupas, calçados, bebidas em variedade, panificação.',
+    caracteristicas:['Volume: médio','Variedade: média a alta','Setup necessário entre lotes de produtos diferentes','Estoques de produto em processo','Flexibilidade moderada','Planejamento por MRP e ordens de produção'],
+    ref:'Slack, Brandon-Jones & Johnston (2018); Moreira (2012)'
+  },
+  mass: {
+    nome:'Produção em Massa', icon:'🏭',
+    desc:'Alto volume de produtos padronizados, com fluxo contínuo ou quase contínuo. Pouca ou nenhuma variação no produto final.',
+    exemplos:'Automóveis, bebidas isotônicas, farinha de trigo, eletrodomésticos, papel.',
+    caracteristicas:['Volume: alto a muito alto','Variedade: baixa a média','Linha de produção dedicada','Baixo custo unitário (economias de escala)','Pouca flexibilidade para mudanças','Controle estatístico do processo (CEP)'],
+    ref:'Slack, Brandon-Jones & Johnston (2018); Moreira (2012)'
+  },
+};
+
+// Implicações por dimensão e nível
+const IMPL = {
+  volume:{
+    alto:['Custo unitário mais baixo (economias de escala)','Processos altamente padronizados','Equipamentos especializados e dedicados','Menor flexibilidade para mudanças'],
+    baixo:['Custo unitário mais alto','Maior flexibilidade do sistema','Equipamentos de uso geral','Mão de obra mais qualificada e versátil'],
+  },
+  variedade:{
+    alto:['Sistema precisa ser flexível','Maior complexidade de planejamento','Setup frequente entre produtos','Estoques de produtos em processo maiores'],
+    baixo:['Rotinas e processos simplificados','Menor treinamento necessário','Custo de planejamento reduzido','Fluxo mais previsível'],
+  },
+  variacao:{
+    alto:['Necessidade de capacidade de reserva','Planejamento agregado mais complexo','Risco de ociosidade ou sobrecarga','Estoques de segurança maiores'],
+    baixo:['Programação da produção mais estável','Melhor utilização da capacidade','Menor necessidade de estoque de segurança','Previsão de demanda mais simples'],
+  },
+  visibilidade:{
+    alto:['Produto altamente customizado para cada cliente','Cliente participa das decisões de projeto e especificação','Maior custo unitário e tempo de produção','Lead time percebido pelo cliente é crítico','Contratos e gestão de escopo ganham importância'],
+    baixo:['Produto padronizado, sem influência direta do cliente','Decisões de projeto tomadas internamente pela empresa','Maior controle sobre processo e qualidade','Foco em eficiência e redução de custo unitário','Erros podem ser corrigidos antes da entrega ao mercado'],
+  },
+};
+
+// Views do dashboard
+const VIEWS = [
+  {id:'tipologia',icon:'🏭', name:'Tipologia sugerida',    sub:'Sistema produtivo indicado'},
+  {id:'impl',     icon:'📋', name:'Implicações gerenciais', sub:'Decisões impactadas'},
+  {id:'comp',     icon:'⚖️', name:'Comparar produtos',     sub:'Todos os perfis lado a lado'},
+];
+
+let STATE = {
+  product: URL_PRODUTO||'isotonica',
+  volume:3, variedade:3, variacao:3, visibilidade:3,
+  view:'tipologia'
+};
+let chartInst = null;
+
+// ── JOURNEY BAR ──
+function initJourneyBar(){
+  const bar = document.getElementById('journeyBar');
+  bar.style.display = 'flex';
+  document.getElementById('appWrap').classList.add('has-journey');
+  const el = document.getElementById('jbSteps');
+  JORNADA.forEach((s,i)=>{
+    const d = document.createElement('div');
+    d.className = 'jb-step'+(s.id==='modelo'?' current':i<2?' done':'');
+    d.innerHTML = `<span class="jb-step-icon">${s.icon}</span>${s.name}`;
+    if(s.url) d.classList.add('clickable');
+    d.onclick = () => { if(s.url) irModulo(s.id); };
+    el.appendChild(d);
+    if(i<JORNADA.length-1){const a=document.createElement('span');a.style.cssText='font-size:9px;color:#2a2520;padding:0 1px;flex-shrink:0';a.textContent='›';el.appendChild(a);}
+  });
+  if(URL_PRODUTO) document.getElementById('jbProduct').textContent = PRODUCT_NAMES[URL_PRODUTO]||URL_PRODUTO;
+}
+function voltarApoLab(){window.location.href=URL_VOLTAR||'https://apolab-ufrrj.netlify.app';}
+function irModulo(mod){
+  const m=JORNADA.find(j=>j.id===mod);
+  if(!m?.url){alert('Módulo em desenvolvimento!');return;}
+  const p=new URLSearchParams({produto:STATE.product,modulo:mod,origem:'apolab',voltar:URL_VOLTAR||window.location.href});
+  window.open(`${m.url}?${p.toString()}`,'_blank');
+}
+
+// ── ONBOARDING ──
+function tip(txt){return `<span class="tip-wrap"><i class="tip-icon">?</i><span class="tip-balloon">${txt}</span></span>`;}
+
+const V4_DEFS = {
+  volume:    {icon:'📦', nome:'Volume', def:'Quantas unidades são produzidas por período? Alto volume favorece padronização e economias de escala; baixo volume exige maior flexibilidade e eleva o custo unitário.', low:'Baixo', high:'Alto'},
+  variedade: {icon:'🎨', nome:'Variedade', def:'Quantos produtos ou variantes diferentes são produzidos? Alta variedade exige maior flexibilidade e frequentes trocas de setup; baixa variedade permite especialização e rotinas mais simples.', low:'Baixa', high:'Alta'},
+  variacao:  {icon:'📊', nome:'Variação da Demanda', def:'A demanda oscila muito ao longo do tempo? Alta variação exige capacidade de reserva e planejamento mais complexo; demanda estável permite operação mais previsível e eficiente.', low:'Estável', high:'Alta variação'},
+  visibilidade:{icon:'👁️', nome:'Visibilidade', def:'Na literatura de APO, visibilidade refere-se ao grau em que o cliente participa ou influencia o processo produtivo — ou seja, ao grau de customização do produto. Alta visibilidade: produto altamente customizado, cliente envolvido nas decisões. Baixa visibilidade: produto padronizado, sem influência direta do cliente.', low:'Baixa (padronizado)', high:'Alta (customizado)'},
+};
+
+function selectProd(key, el){
+  STATE.product = key;
+  document.querySelectorAll('.prod-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btnNext1').disabled = false;
+  // pré-carrega valores
+  const p = PRODUCT_PROFILES[key];
+  STATE.volume = p.volume; STATE.variedade = p.variedade;
+  STATE.variacao = p.variacao; STATE.visibilidade = p.visibilidade;
+}
+
+function goStep(n){
+  [1,2].forEach(i=>document.getElementById('step'+i).style.display=i===n?'block':'none');
+  if(n===2) buildStep2Sliders();
+  document.getElementById('onboarding').scrollTo({top:0,behavior:'smooth'});
+}
+
+function buildStep2Sliders(){
+  const p = PRODUCT_PROFILES[STATE.product];
+  document.getElementById('step2title').textContent = `Perfil dos 4 V's: ${p.nome}`;
+  document.getElementById('step2tip').innerHTML = `<strong>Contexto do produto:</strong> ${p.contexto}`;
+  const grid = document.getElementById('v4sliders');
+  grid.innerHTML = '';
+  ['volume','variedade','variacao','visibilidade'].forEach(v=>{
+    const d = V4_DEFS[v];
+    const card = document.createElement('div');
+    card.className = 'v4-card';
+    card.innerHTML = `
+      <div class="v4-header"><div class="v4-icon">${d.icon}</div><div class="v4-name">${d.nome}${tip(d.def)}</div></div>
+      <div class="v4-def">${d.def}</div>
+      <div class="v4-slider-row">
+        <input type="range" class="v4-slider" id="ob_${v}" min="1" max="5" step="1" value="${STATE[v]}"
+          oninput="STATE['${v}']=parseInt(this.value);document.getElementById('ob_v_${v}').textContent=this.value">
+        <span class="v4-val" id="ob_v_${v}">${STATE[v]}</span>
+      </div>
+      <div class="v4-poles"><span>${d.low}</span><span>${d.high}</span></div>`;
+    grid.appendChild(card);
+  });
+}
+
+function launchDashboard(){
+  document.getElementById('onboarding').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  buildDashboard();
+  runAnalysis();
+}
+
+function restartOnboarding(){
+  STATE.view='tipologia';
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('onboarding').style.display='flex';
+  document.querySelectorAll('.prod-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('btnNext1').disabled=true;
+  goStep(1);
+}
+
+// ── DASHBOARD ──
+function buildDashboard(){
+  const p = PRODUCT_PROFILES[STATE.product];
+  document.getElementById('ctxPill').innerHTML = `
+    <div class="ctx-pill-row"><span class="ctx-pill-key">Produto</span><span class="ctx-pill-val">${p.icon} ${p.nome}</span></div>
+    <div class="ctx-pill-row"><span class="ctx-pill-key">Tipo sugerido</span><span class="ctx-pill-val">${TIPOS[p.tipoIdeal].nome}</span></div>`;
+
+  // sliders sidebar
+  const el = document.getElementById('sidebarSliders');
+  el.innerHTML = '';
+  ['volume','variedade','variacao','visibilidade'].forEach(v=>{
+    const d = V4_DEFS[v];
+    el.innerHTML += `<div class="ctrl-group">
+      <div class="ctrl-lbl-row"><span class="ctrl-lbl">${d.icon} ${d.nome}</span>${tip(d.def)}</div>      <div class="ctrl-range-row">
+        <input type="range" class="ctrl-range" id="sb_${v}" min="1" max="5" step="1" value="${STATE[v]}"
+          oninput="STATE['${v}']=parseInt(this.value);document.getElementById('sb_v_${v}').textContent=this.value">
+        <span class="ctrl-val" id="sb_v_${v}">${STATE[v]}</span>
+      </div>
+      <div class="ctrl-poles"><span>${d.low}</span><span>${d.high}</span></div>
+    </div>`;
+  });
+
+  // view tabs
+  const tabs = document.getElementById('viewTabs');
+  tabs.innerHTML = '';
+  VIEWS.forEach(vw=>{
+    const btn = document.createElement('button');
+    btn.className = 'v-tab'+(STATE.view===vw.id?' active':'');
+    btn.innerHTML = `<div class="v-tab-icon">${vw.icon}</div><div><div class="v-tab-name">${vw.name}</div><div class="v-tab-sub">${vw.sub}</div></div>`;
+    btn.onclick = ()=>{STATE.view=vw.id;document.querySelectorAll('.v-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');runAnalysis();};
+    tabs.appendChild(btn);
+  });
+}
+
+function runAnalysis(){
+  const btn=document.getElementById('btnRun');
+  btn.innerHTML='<span class="spinner"></span> Analisando...';
+  btn.disabled=true;
+  setTimeout(()=>{doAnalysis();btn.innerHTML='<span>▶</span> Atualizar Análise';btn.disabled=false;},300);
+}
+
+function tipoSugerido(vol,var_,vari,vis){
+  // Projeto: volume muito baixo OU visibilidade muito alta
+  if(vol<=1 || vis>=5) return 'project';
+  // Lote: variedade alta OU volume baixo-médio
+  if(var_>=3 || vol<=3) return 'batch';
+  // Massa: alto volume, baixa variedade
+  return 'mass';
+}
+
+function doAnalysis(){
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  const p = PRODUCT_PROFILES[STATE.product];
+  const tipo = tipoSugerido(STATE.volume,STATE.variedade,STATE.variacao,STATE.visibilidade);
+
+  if(STATE.view==='tipologia') renderTipologia(tipo);
+  else if(STATE.view==='impl') renderImpl();
+  else if(STATE.view==='comp') renderComp();
+}
+
+// ── RADAR ──
+function renderRadar(p, tipo){
+  const scores = [STATE.volume,STATE.variedade,STATE.variacao,STATE.visibilidade];
+  const preloaded = [p.volume,p.variedade,p.variacao,p.visibilidade];
+  const t = TIPOS[tipo];
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">⚙️</div><div>
+      <div class="mb-title">Perfil dos 4 V's: ${p.icon} ${p.nome}</div>
+      <div class="mb-desc">${p.contexto}</div>
+      <div class="mb-tags"><span class="mb-tag">Sistema sugerido: ${t.nome}</span><span class="mb-tag">APO I · Classificação de sistemas produtivos</span></div>
+    </div></div>
+
+    <div class="v4-result-grid">
+      ${['volume','variedade','variacao','visibilidade'].map((v,i)=>{
+        const d=V4_DEFS[v];
+        const lbl=['Muito baixo','Baixo','Médio','Alto','Muito alto'][scores[i]-1];
+        return `<div class="vr-card${i===0?' hi':''}">
+          <div class="vr-icon">${d.icon}</div>
+          <div class="vr-name">${d.nome}</div>
+          <div class="vr-score">${scores[i]}/5</div>
+          <div class="vr-label">${lbl}</div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="insight-box">
+      <div class="insight-title">💡 Diagnóstico do sistema produtivo</div>
+      <div class="insight-text">
+        Com base no perfil definido (Volume ${STATE.volume}, Variedade ${STATE.variedade}, Variação ${STATE.variacao}, Visibilidade ${STATE.visibilidade}),
+        o sistema produtivo mais indicado para <strong>${p.nome}</strong> é <strong>${t.nome}</strong>: <em>${t.desc}</em>.
+        ${STATE.volume>=4&&STATE.variedade>=4?'<br><strong>⚠️ Atenção:</strong> Alto volume com alta variedade simultaneamente é difícil de sustentar — normalmente exige segmentação da linha produtiva ou estratégia de plataforma de produto.':''}
+        ${STATE.visibilidade>=4&&STATE.volume>=4?'<br><strong>⚠️ Atenção:</strong> Alta visibilidade com alto volume é típico de serviços de massa (ex: fast food) e exige equilíbrio entre padronização e atendimento.':''}
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="cc-title">Radar dos 4 V's</div>
+      <div class="cc-sub">Perfil atual (roxo) × Perfil original do produto (cinza). Escala de 1 a 5.</div>
+      <canvas id="mainChart"></canvas>
+    </div>
+  </div>`;
+
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  chartInst=new Chart(ctx,{
+    type:'radar',
+    data:{
+      labels:['Volume','Variedade','Variação da Demanda','Visibilidade'],
+      datasets:[
+        {label:'Perfil atual',data:scores,backgroundColor:'rgba(107,63,160,.15)',borderColor:'rgba(107,63,160,.9)',borderWidth:2,pointBackgroundColor:'rgba(107,63,160,.9)',pointRadius:5},
+        {label:'Perfil original',data:preloaded,backgroundColor:'rgba(18,16,14,.04)',borderColor:'rgba(18,16,14,.25)',borderWidth:1.5,borderDash:[4,3],pointBackgroundColor:'rgba(18,16,14,.3)',pointRadius:4},
+      ]
+    },
+    options:{responsive:true,
+      plugins:{legend:{position:'top',labels:{font:{family:'DM Mono',size:10}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${c.raw}/5`}}},
+      scales:{r:{min:0,max:5,ticks:{stepSize:1,font:{family:'DM Mono',size:9}},pointLabels:{font:{family:'DM Sans',size:11,weight:'600'}},grid:{color:'#e2dcd0'},angleLines:{color:'#e2dcd0'}}}}
+  });
+}
+
+// ── TIPOLOGIA ──
+function renderTipologia(tipo){
+  const ordTipos = ['project','batch','mass'];
+
+  const cards = ordTipos.map(t=>{
+    const tp = TIPOS[t];
+    const isMatch = t === tipo;
+    return `<div class="tipo-card${isMatch?' match':''}">
+      ${isMatch?'<div class="tipo-badge badge-match">✔ Indicado para este produto</div>':''}
+      <div class="tipo-icon">${tp.icon}</div>
+      <div class="tipo-name">${tp.nome}</div>
+      <div class="tipo-desc" style="margin-bottom:10px">${tp.desc}</div>
+      <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">Características</div>
+      <ul style="list-style:none;display:flex;flex-direction:column;gap:4px">
+        ${tp.caracteristicas.map(c=>`<li style="font-size:10px;color:var(--muted);display:flex;gap:5px;align-items:flex-start"><span style="color:var(--purple);flex-shrink:0">·</span>${c}</li>`).join('')}
+      </ul>
+      <div style="margin-top:10px;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Exemplos</div>
+      <div style="font-size:10px;color:var(--muted);font-style:italic">${tp.exemplos}</div>
+      <div style="margin-top:8px;font-size:9px;color:#aaa">${tp.ref}</div>
+    </div>`;
+  }).join('');
+
+  const t = TIPOS[tipo];
+  const p = PRODUCT_PROFILES[STATE.product];
+
+  // tabela comparativa
+  const atributos = [
+    {label:'Volume por período', vals:{project:'Unitário (1 ou poucos)',batch:'Médio (lotes)',mass:'Alto a muito alto'}},
+    {label:'Variedade de produtos', vals:{project:'Máxima (único)',batch:'Média a alta',mass:'Baixa a média'}},
+    {label:'Custo unitário', vals:{project:'Muito alto',batch:'Médio',mass:'Baixo (escala)'}},
+    {label:'Flexibilidade', vals:{project:'Total',batch:'Moderada',mass:'Baixa'}},
+    {label:'Setup/reconfiguração', vals:{project:'Por produto',batch:'Entre lotes',mass:'Mínimo ou nenhum'}},
+    {label:'Participação do cliente', vals:{project:'Alta (co-projeto)',batch:'Baixa',mass:'Muito baixa'}},
+    {label:'Planejamento e controle', vals:{project:'Cronograma/EAP',batch:'MRP/Ordens',mass:'CEP/JIT'}},
+    {label:'Layout típico', vals:{project:'Posicional',batch:'Funcional ou celular',mass:'Em linha (fluxo)'}},
+  ];
+
+  const tableRows = atributos.map(a=>`<tr>
+    <td style="font-weight:600;font-size:11px">${a.label}</td>
+    ${ordTipos.map(t=>`<td style="font-size:11px${t===tipo?';color:var(--purple);font-weight:700':''}">${a.vals[t]}</td>`).join('')}
+  </tr>`).join('');
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">🏭</div><div>
+      <div class="mb-title">Modelos de Produção: Projeto, Lote e Massa</div>
+      <div class="mb-desc">A literatura clássica de APO (Slack, Moreira, Corrêa & Caon) distingue três grandes modelos de produção, que diferem fundamentalmente em volume, variedade, custo e flexibilidade.</div>
+      <div class="mb-tags"><span class="mb-tag">Modelo indicado: ${t.nome}</span><span class="mb-tag">APO I · Classificação de sistemas produtivos</span><span class="mb-tag">Slack & Moreira</span></div>
+    </div></div>
+
+    <div class="insight-box">
+      <div class="insight-title">💡 Diagnóstico: ${p.icon} ${p.nome}</div>
+      <div class="insight-text">
+        Com Volume=${STATE.volume}, Variedade=${STATE.variedade}, Variação=${STATE.variacao} e Visibilidade=${STATE.visibilidade},
+        o modelo mais adequado é <strong>${t.nome}</strong>: ${t.desc}
+        <br><br>Exemplos reais deste modelo: <em>${t.exemplos}</em>
+        ${STATE.volume>=4&&STATE.variedade>=4?'<br><br><strong>⚠️ Atenção:</strong> alto volume com alta variedade simultaneamente é uma tensão real. O automóvel elétrico é um bom exemplo: usa plataformas compartilhadas e modularização para conciliar escala com customização.':''}
+      </div>
+    </div>
+
+    <div class="tipo-grid" style="grid-template-columns:repeat(3,1fr)">${cards}</div>
+
+    <div class="comp-table-wrap">
+      <div class="comp-table-header">Comparativo entre os três modelos de produção</div>
+      <table>
+        <thead><tr><th>Atributo</th>${ordTipos.map(t=>`<th>${TIPOS[t].icon} ${TIPOS[t].nome}</th>`).join('')}</tr></thead>
+        <tbody>${tableRows}</tbody>
+      </table>
+    </div>
+  </div>`;}
+
+
+// ── IMPLICAÇÕES ──
+function renderImpl(){
+  const tipo = tipoSugerido(STATE.volume,STATE.variedade,STATE.variacao,STATE.visibilidade);
+  const dimensoes = [
+    {key:'volume',    label:'Volume',              scores:STATE.volume,    alto:STATE.volume>=3},
+    {key:'variedade', label:'Variedade',            scores:STATE.variedade, alto:STATE.variedade>=3},
+    {key:'variacao',  label:'Variação da Demanda',  scores:STATE.variacao,  alto:STATE.variacao>=3},
+    {key:'visibilidade',label:'Visibilidade',       scores:STATE.visibilidade,alto:STATE.visibilidade>=3},
+  ];
+
+  const cards = dimensoes.map(d=>{
+    const lista = d.alto ? IMPL[d.key].alto : IMPL[d.key].baixo;
+    const cor = d.alto ? 'var(--purple)' : 'var(--green)';
+    return `<div class="impl-card">
+      <div class="impl-title" style="color:${cor}">${V4_DEFS[d.key].icon} ${d.label}: ${['Muito baixo','Baixo','Médio','Alto','Muito alto'][d.scores-1]}</div>
+      <ul class="impl-list">${lista.map(i=>`<li>${i}</li>`).join('')}</ul>
+    </div>`;
+  }).join('');
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">📋</div><div>
+      <div class="mb-title">Implicações Gerenciais dos 4 V's</div>
+      <div class="mb-desc">Cada dimensão do perfil gera implicações diretas sobre as decisões de gestão da produção: custo, flexibilidade, capacidade, planejamento e controle.</div>
+      <div class="mb-tags"><span class="mb-tag">Sistema: ${TIPOS[tipo].nome}</span><span class="mb-tag">Fonte: Slack, Brandon-Jones & Johnston (2018); Moreira (2012)</span></div>
+    </div></div>
+
+    <div class="impl-grid">${cards}</div>
+
+    <div class="insight-box">
+      <div class="insight-title">💡 Tensões do perfil atual</div>
+      <div class="insight-text">
+        ${STATE.volume>=4&&STATE.variedade>=4?'<strong>Volume alto + Variedade alta:</strong> tensão clássica entre eficiência produtiva e flexibilidade. A estratégia usual é adotar projetos de produto modular ou plataformas compartilhadas, que permitem variedade no produto final com padronização dos componentes internos (ex.: indústria automotiva).<br>':''}
+        ${STATE.variacao>=4&&STATE.volume>=4?'<strong>Alta variação da demanda + Alto volume:</strong> risco de ociosidade nos períodos de baixa e de falta de capacidade nos picos. O planejamento agregado da produção é o instrumento central para equilibrar essa tensão, por meio de estoques sazonais, horas extras ou ajuste de mão de obra.<br>':''}
+        ${STATE.visibilidade>=4&&STATE.variedade<=2?'<strong>Alta customização + Baixa variedade de portfólio:</strong> situação típica de serviços profissionais ou manufatura sob encomenda com escopo restrito. O desafio é padronizar processos internos sem engessar a entrega ao cliente.<br>':''}
+        ${STATE.volume<=2&&STATE.variedade>=4?'<strong>Baixo volume + Alta variedade:</strong> perfil típico da produção por lote ou por projeto. A prioridade gerencial recai sobre a gestão de ordens de produção, programação e controle de lead time, não sobre economias de escala.<br>':''}
+        ${!(STATE.volume>=4&&STATE.variedade>=4)&&!(STATE.variacao>=4&&STATE.volume>=4)&&!(STATE.visibilidade>=4&&STATE.variedade<=2)&&!(STATE.volume<=2&&STATE.variedade>=4)?'<span style="color:var(--muted)">Não há tensões críticas identificadas para este perfil.</span>':''}
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── COMPARAÇÃO ──
+function renderComp(){
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  const prods = Object.entries(PRODUCT_PROFILES);
+  const colors = ['#0a325c','#1d4e8f','#1a7a5e','#b8860b','#bf4020','#c06000'];
+  const dims = ['volume','variedade','variacao','visibilidade'];
+  const dimLabels = ['Volume','Variedade','Variação da Demanda','Visibilidade'];
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">⚖️</div><div>
+      <div class="mb-title">Comparação entre produtos</div>
+      <div class="mb-desc">Cada barra representa a pontuação (1–5) de um produto em cada dimensão dos 4 V's. Compare como os diferentes produtos se posicionam e por que levam a modelos de produção distintos.</div>
+    </div></div>
+    <div class="chart-card">
+      <div class="cc-title">Perfil dos 4 V's por produto</div>
+      <div class="cc-sub">Escala de 1 (baixo) a 5 (alto) · Produto em destaque: ${PRODUCT_PROFILES[STATE.product].icon} ${PRODUCT_PROFILES[STATE.product].nome}</div>
+      <canvas id="mainChart" style="max-height:360px"></canvas>
+    </div>
+    <div class="comp-table-wrap">
+      <div class="comp-table-header">Perfil completo por produto</div>
+      <table>
+        <thead><tr><th>Produto</th><th>Volume</th><th>Variedade</th><th>Variação</th><th>Visibilidade</th><th>Modelo indicado</th></tr></thead>
+        <tbody>${prods.map(([k,p])=>`<tr${k===STATE.product?' style="background:var(--cream)"':''}>
+          <td style="font-weight:700">${p.icon} ${p.nome}</td>
+          <td style="text-align:center">${p.volume}/5</td>
+          <td style="text-align:center">${p.variedade}/5</td>
+          <td style="text-align:center">${p.variacao}/5</td>
+          <td style="text-align:center">${p.visibilidade}/5</td>
+          <td>${TIPOS[p.tipoIdeal]?.icon||'🏭'} ${TIPOS[p.tipoIdeal]?.nome||p.tipoIdeal}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  chartInst = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: dimLabels,
+      datasets: prods.map(([k,p],i) => ({
+        label: `${p.icon} ${p.nome}`,
+        data: dims.map(d => p[d]),
+        backgroundColor: k===STATE.product ? colors[i] : colors[i]+'99',
+        borderColor: colors[i],
+        borderWidth: k===STATE.product ? 2 : 1,
+        borderRadius: 4,
+      }))
+    },
+    options: {
+      responsive: true,
+      interaction: {mode:'index', intersect:false},
+      plugins: {
+        legend: {position:'top', labels:{font:{family:'DM Mono',size:10}, boxWidth:12}},
+        tooltip: {callbacks:{label: c=>`${c.dataset.label}: ${c.raw}/5`}}
+      },
+      scales: {
+        x: {grid:{display:false}, ticks:{font:{family:'DM Sans',size:11}}},
+        y: {min:0, max:5, ticks:{stepSize:1, font:{family:'DM Mono',size:10}},
+            grid:{color:'#e2dcd0'},
+            title:{display:true, text:'Pontuação (1–5)', font:{family:'DM Sans',size:10}}}
+      }
+    }
+  });
+}
+
+// ── INIT ──
+initJourneyBar();
+// auto-skip step1 (produto vem da capa via URL)
+window.addEventListener('load',()=>{
+  if(URL_PRODUTO && PRODUCT_PROFILES[URL_PRODUTO]){
+    STATE.product = URL_PRODUTO;
+    const p = PRODUCT_PROFILES[URL_PRODUTO];
+    STATE.volume = p.volume; STATE.variedade = p.variedade;
+    STATE.variacao = p.variacao; STATE.visibilidade = p.visibilidade;
+  }
+  goStep(2);
+});
+</script>
+</body>
+</html>

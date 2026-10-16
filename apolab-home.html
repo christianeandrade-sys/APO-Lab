@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APO Lab · UFRRJ</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink: #072f57;
+  --paper: #f4f5f7;
+  --cream: #e8edf3;
+  --warm: #dce4ed;
+  --blue: #0a325c;
+  --blue-mid: #1a5c8f;
+  --green: #3a9648;
+  --green-light: #4ca456;
+  --gold: #b8860b;
+  --purple: #6b3fa0;
+  --muted: #5a6e82;
+  --border: #c5d0db;
+  --white: #fff;
+  --accent: #0a325c;
+  --shadow-sm: 0 1px 4px rgba(7,47,87,.08);
+  --shadow: 0 3px 14px rgba(7,47,87,.12);
+  --shadow-lg: 0 8px 32px rgba(7,47,87,.16);
+  --r: 10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.6}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--blue);color:white;padding:0;position:sticky;top:0;z-index:200;border-bottom:4px solid var(--green-light)}
+.topbar-inner{padding:14px 32px;display:flex;align-items:center;justify-content:space-between}
+.topbar-left{display:flex;align-items:center;gap:18px}
+.topbar-logo{height:48px;width:auto;filter:brightness(0) invert(1) drop-shadow(0 0 2px rgba(255,255,255,.6));opacity:1;flex-shrink:0}
+.topbar-logo-fallback{display:none;font-family:'Fraunces',serif;font-size:18px;font-weight:900;color:white;letter-spacing:-.5px;line-height:1}
+.topbar-divider{width:1px;height:40px;background:rgba(255,255,255,.2);flex-shrink:0}
+.topbar-title{font-family:'Fraunces',serif;font-size:22px;font-weight:900;letter-spacing:-.4px;line-height:1.1}
+.topbar-sub{font-size:11px;color:rgba(255,255,255,.65);letter-spacing:.5px;margin-top:3px}
+.inst-bar{background:#062848;border-top:1px solid rgba(255,255,255,.07);padding:5px 32px;display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.3px}
+.inst-sep{color:rgba(255,255,255,.25);margin:0 3px}
+
+/* ── AUTORIA BANNER ── */
+.autoria-banner{
+  background:linear-gradient(100deg,#062848 0%,#0a325c 55%,#2a7a38 100%);
+  color:white;padding:18px 32px;
+  display:flex;align-items:center;justify-content:space-between;gap:20px;
+  flex-wrap:wrap;
+}
+.autoria-left{display:flex;align-items:center;gap:16px}
+.autoria-avatar{
+  width:44px;height:44px;border-radius:50%;
+  background:rgba(255,255,255,.15);border:2px solid rgba(255,255,255,.3);
+  display:flex;align-items:center;justify-content:center;
+  font-size:18px;flex-shrink:0;
+}
+.autoria-name{font-family:'Fraunces',serif;font-size:16px;font-weight:700;letter-spacing:-.2px;line-height:1.2}
+.autoria-role{font-size:11px;color:rgba(255,255,255,.65);margin-top:2px;letter-spacing:.3px}
+.autoria-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.autoria-chip{
+  font-size:10px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
+  padding:4px 10px;border-radius:20px;
+  border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.8);
+  white-space:nowrap;
+}
+.autoria-slogan{
+  font-size:11px;font-style:italic;color:rgba(255,255,255,.5);
+  letter-spacing:.3px;border-left:2px solid rgba(255,255,255,.2);padding-left:12px;
+}
+
+/* ── HERO ── */
+.hero{
+  background:linear-gradient(135deg, #062848 0%, #0a325c 60%, #0d3d6e 100%);
+  color:white;
+  padding:56px 32px 48px;
+  position:relative;
+  overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 75% 40%, rgba(76,164,86,.15) 0%, transparent 60%),
+             radial-gradient(ellipse at 15% 85%, rgba(26,92,143,.20) 0%, transparent 55%);
+  pointer-events:none;
+}
+.hero::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;height:4px;
+  background:linear-gradient(90deg, var(--green-light), var(--blue-mid));
+}
+.hero-inner{max-width:900px;margin:0 auto;position:relative}
+.hero-eyebrow{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,.55);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.hero-eyebrow::before{content:'';display:inline-block;width:24px;height:2px;background:var(--green-light)}
+.hero-title{font-family:'Fraunces',serif;font-size:48px;font-weight:900;line-height:1.05;letter-spacing:-1.5px;margin-bottom:16px;color:white}
+.hero-title span{color:#5ec96a}
+.hero-desc{font-size:15px;color:rgba(255,255,255,.72);max-width:560px;line-height:1.7;margin-bottom:32px}
+.hero-chips{display:flex;gap:8px;flex-wrap:wrap}
+.hero-chip{
+  padding:5px 13px;border-radius:20px;
+  border:1px solid rgba(255,255,255,.18);
+  background:rgba(255,255,255,.06);
+  font-size:11px;font-weight:500;color:rgba(255,255,255,.75);
+  display:flex;align-items:center;gap:5px;
+}
+.hero-chip span{font-size:13px}
+
+/* ── PRODUCT SELECTOR ── */
+.section{max-width:980px;margin:0 auto;padding:48px 32px 0}
+.section-label{font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.section-label::before{content:'';display:inline-block;width:16px;height:2px;background:var(--blue)}
+.section-title{font-family:'Fraunces',serif;font-size:26px;font-weight:900;letter-spacing:-.5px;margin-bottom:6px}
+.section-desc{font-size:13px;color:var(--muted);margin-bottom:28px;max-width:600px;line-height:1.6}
+
+.product-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:14px}
+.product-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:40px}
+
+.product-card{
+  background:var(--white);border:2px solid var(--border);border-radius:var(--r);
+  padding:22px 18px;cursor:pointer;transition:all .2s;
+  position:relative;overflow:hidden;
+}
+.product-card::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(135deg, transparent 60%, rgba(191,64,32,.04));
+  pointer-events:none;
+}
+.product-card:hover{border-color:var(--blue);transform:translateY(-3px);box-shadow:var(--shadow)}
+.product-card.selected{border-color:var(--blue);background:#f0f4fa;box-shadow:var(--shadow)}
+.product-card.selected::before{
+  content:'✓ Selecionado';
+  position:absolute;top:10px;right:12px;
+  font-size:9px;font-weight:700;color:var(--blue);letter-spacing:.5px;text-transform:uppercase;
+}
+.pc-icon{font-size:32px;margin-bottom:10px;line-height:1}
+.pc-name{font-weight:700;font-size:15px;margin-bottom:3px}
+.pc-sector{font-size:11px;color:var(--muted);margin-bottom:10px}
+.pc-tags{display:flex;gap:5px;flex-wrap:wrap}
+.pc-tag{font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;padding:2px 8px;border-radius:4px}
+.tag-cont{background:#dbeafe;color:#1e40af}
+.tag-disc{background:#d1fae5;color:#065f46}
+.tag-serv{background:#fef3c7;color:#92400e}
+.tag-proj{background:#ede9fe;color:#5b21b6}
+.tag-mass{background:#fee2e2;color:#991b1b}
+.tag-batch{background:#fce7f3;color:#9d174d}
+
+/* produto especial — projeto */
+.product-card.proj-card{border-color:var(--purple)}
+.product-card.proj-card:hover{border-color:var(--purple);box-shadow:0 3px 14px rgba(107,63,160,.15)}
+.product-card.proj-card.selected{border-color:var(--purple);background:#f8f5ff}
+.product-card.proj-card.selected::before{color:var(--purple)}
+
+/* ── PRODUTO SELECIONADO BANNER ── */
+.selected-banner{
+  background:var(--ink);color:var(--paper);
+  border-radius:var(--r);padding:18px 22px;
+  display:flex;align-items:center;gap:16px;
+  margin-bottom:40px;
+  animation:slideUp .4s cubic-bezier(.22,1,.36,1) both;
+}
+.sb-icon{font-size:32px;flex-shrink:0}
+.sb-info{flex:1}
+.sb-name{font-family:'Fraunces',serif;font-size:18px;font-weight:700}
+.sb-desc{font-size:12px;color:#aaa;margin-top:2px}
+.sb-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.sb-tag{font-size:9px;font-weight:600;padding:2px 8px;border-radius:4px;background:rgba(255,255,255,.1);color:#ccc;letter-spacing:.4px;text-transform:uppercase}
+.btn-change{
+  font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;
+  padding:7px 14px;border-radius:6px;border:1.5px solid #444;
+  background:transparent;color:#bbb;cursor:pointer;transition:all .2s;white-space:nowrap;
+}
+.btn-change:hover{border-color:#888;color:white}
+
+/* ── MÓDULOS ── */
+.modules-section{max-width:980px;margin:0 auto;padding:0 32px 64px}
+.journey-label{
+  display:flex;align-items:center;gap:12px;
+  margin-bottom:24px;
+}
+.journey-line{flex:1;height:1px;background:var(--border)}
+.journey-text{font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);white-space:nowrap}
+
+.modules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+
+.module-card{
+  background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);
+  padding:20px 18px;transition:all .2s;position:relative;overflow:hidden;
+}
+.module-card.available{cursor:pointer}
+.module-card.available:hover{border-color:var(--blue);transform:translateY(-2px);box-shadow:var(--shadow)}
+.module-card.active-module{border-color:var(--green);background:#f4fbf8}
+.module-card.coming{opacity:.5;cursor:not-allowed;pointer-events:none}
+
+.mod-step{
+  font-size:9px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px;
+}
+.step-num{
+  width:20px;height:20px;border-radius:50%;
+  background:var(--cream);color:var(--muted);
+  font-size:9px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.module-card.available .step-num{background:var(--blue);color:white}
+.module-card.active-module .step-num{background:var(--green);color:white}
+
+.mod-icon{font-size:26px;margin-bottom:8px;line-height:1}
+.mod-name{font-weight:700;font-size:14px;margin-bottom:4px;line-height:1.3}
+.mod-desc{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:12px}
+.mod-tags{display:flex;gap:5px;flex-wrap:wrap}
+.mod-tag{font-size:9px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:.3px}
+.tag-apo1{background:#dbeafe;color:#1e40af}
+.tag-apo2{background:#d1fae5;color:#065f46}
+.tag-quant{background:#fef3c7;color:#92400e}
+.tag-qual{background:#ede9fe;color:#5b21b6}
+
+.mod-status{
+  position:absolute;top:12px;right:12px;
+  font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+  padding:3px 8px;border-radius:4px;
+}
+.status-live{background:#d1fae5;color:#065f46}
+.status-soon{background:var(--cream);color:var(--muted)}
+
+.mod-btn{
+  width:100%;margin-top:14px;padding:9px;
+  border:none;border-radius:7px;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
+  cursor:pointer;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.mod-btn.go{background:var(--blue);color:white}
+.mod-btn.go:hover{background:#163d72}
+.mod-btn.locked{background:var(--cream);color:var(--muted);cursor:default}
+
+/* ── CONNECTOR ARROWS ── */
+.journey-flow{
+  display:flex;align-items:center;justify-content:center;
+  gap:0;margin-bottom:32px;flex-wrap:wrap;
+  padding:0 4px;
+}
+.flow-step{
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  padding:8px 6px;
+  text-align:center;min-width:80px;
+}
+.flow-icon{font-size:20px}
+.flow-name{font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.3px;line-height:1.3;max-width:72px}
+.flow-arrow{font-size:16px;color:var(--border);margin:0 -2px;align-self:center;padding-bottom:14px}
+.flow-step.active-flow .flow-icon{font-size:22px;filter:drop-shadow(0 0 6px rgba(26,122,94,.5))}
+.flow-step.active-flow .flow-name{color:var(--green);font-weight:700}
+
+/* ── NOTA RODAPÉ ── */
+.footer{
+  background:#062848;color:rgba(255,255,255,.45);
+  padding:24px 32px;
+  font-size:11px;
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;
+}
+.footer a{color:rgba(255,255,255,.6);text-decoration:none}
+.footer a:hover{color:white}
+
+/* ── OVERLAY de seleção obrigatória ── */
+.overlay-hint{
+  position:fixed;bottom:28px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:var(--paper);
+  padding:12px 22px;border-radius:30px;
+  font-size:13px;font-weight:500;
+  box-shadow:var(--shadow-lg);
+  display:flex;align-items:center;gap:10px;
+  animation:float 3s ease-in-out infinite;
+  z-index:100;
+  pointer-events:none;
+}
+@keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-5px)}}
+
+/* ── ANIMATIONS ── */
+.fade-in{animation:fadeIn .4s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:720px){
+  .product-grid{grid-template-columns:1fr 1fr}
+  .modules-grid{grid-template-columns:1fr}
+  .hero-title{font-size:32px}
+  .journey-flow{gap:0}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <img class="topbar-logo"
+           src="https://institucional.ufrrj.br/ccs/files/2019/06/rural_logo01.png"
+           alt="UFRRJ"
+           onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="topbar-logo-fallback">UFRRJ</div>
+      <div class="topbar-divider"></div>
+      <div>
+        <div class="topbar-title">APO Lab</div>
+        <div class="topbar-sub">Ambiente simulado de Produção e Operações</div>
+      </div>
+    </div>
+  </div>
+  <div class="inst-bar">
+    <span>Universidade Federal Rural do Rio de Janeiro</span>
+    <span class="inst-sep">·</span>
+    <span>Curso de Administração · Campus Nova Iguaçu</span>
+    <span class="inst-sep">·</span>
+    <span>Baseado nas disciplinas da área de Produção e Operações</span>
+  </div>
+</header>
+
+<!-- AUTORIA -->
+<div class="autoria-banner">
+  <div class="autoria-left">
+    <div class="autoria-avatar">👩‍🏫</div>
+    <div>
+      <div class="autoria-name">Prof.ª Christiane Aguiar de Andrade</div>
+      <div class="autoria-role">Departamento de Administração · UFRRJ · Campus Nova Iguaçu</div>
+    </div>
+  </div>
+  <div class="autoria-right">
+    <div class="autoria-slogan">Planejamento · Processos · Resultados</div>
+  </div>
+</div>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-eyebrow">Simulador didático interativo</div>
+    <div class="hero-title">Da ideia ao produto:<br>simule <span>cada decisão</span><br>de produção.</div>
+    <div class="hero-desc">Escolha um produto real e percorra todas as decisões de Administração da Produção e Operações, desde a previsão de demanda até o sequenciamento do chão de fábrica. Cada módulo é um simulador interativo com parâmetros ajustáveis e resultados em tempo real.</div>
+    <div class="hero-chips">
+      <div class="hero-chip"><span>📊</span> Simuladores interativos</div>
+      <div class="hero-chip"><span>🎯</span> Baseado nas ementas IM796 e IM798</div>
+      <div class="hero-chip"><span>🔄</span> Jornada contínua por produto</div>
+      <div class="hero-chip"><span>📐</span> Fórmulas e conceitos integrados</div>
+    </div>
+  </div>
+</section>
+
+<!-- FLUXO DA JORNADA -->
+<div style="background:var(--cream);border-bottom:1px solid var(--border);padding:16px 32px">
+  <div style="max-width:980px;margin:0 auto">
+    <div class="journey-flow" id="journeyFlow">
+      <div class="flow-step" data-mod="demanda">
+        <div class="flow-icon">📈</div>
+        <div class="flow-name">Previsão de demanda</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" data-mod="sistema">
+        <div class="flow-icon">⚙️</div>
+        <div class="flow-name">Sistema de produção</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" data-mod="localizacao">
+        <div class="flow-icon">📍</div>
+        <div class="flow-name">Localização</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" data-mod="capacidade">
+        <div class="flow-icon">⚡</div>
+        <div class="flow-name">Capacidade</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" data-mod="arranjo">
+        <div class="flow-icon">🏭</div>
+        <div class="flow-name">Arranjo físico</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" data-mod="agregado">
+        <div class="flow-icon">📋</div>
+        <div class="flow-name">Plano agregado</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" data-mod="pmp">
+        <div class="flow-icon">📅</div>
+        <div class="flow-name">Plano mestre</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" data-mod="mrp">
+        <div class="flow-icon">🔩</div>
+        <div class="flow-name">MRP</div>
+      </div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" data-mod="sequencia">
+        <div class="flow-icon">🗓️</div>
+        <div class="flow-name">Sequenciamento</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ESCOLHA DO PRODUTO -->
+<div class="section" id="productSection">
+  <div class="section-label">Passo 1 de 2</div>
+  <div class="section-title">Escolha o produto da jornada</div>
+  <div class="section-desc">O produto que você escolher aqui será o fio condutor de todos os módulos. Cada simulador usará as características desse produto para contextualizar os conceitos e os dados.</div>
+
+  <div class="product-grid">
+    <div class="product-card" onclick="selectProduct('isotonica', this)">
+      <div class="pc-icon">🧃</div>
+      <div class="pc-name">Bebida Isotônica</div>
+      <div class="pc-sector">Alimentos e Bebidas · Indústria de consumo</div>
+      <div class="pc-tags">
+        <span class="pc-tag tag-cont">Produção contínua</span>
+        <span class="pc-tag tag-mass">Alta escala</span>
+      </div>
+    </div>
+    <div class="product-card" onclick="selectProduct('sorvete', this)">
+      <div class="pc-icon">🍦</div>
+      <div class="pc-name">Sorvete Premium</div>
+      <div class="pc-sector">Alimentos · Produção sazonal</div>
+      <div class="pc-tags">
+        <span class="pc-tag tag-batch">Batelada</span>
+        <span class="pc-tag tag-disc">Sazonal</span>
+      </div>
+    </div>
+    <div class="product-card" onclick="selectProduct('farinha', this)">
+      <div class="pc-icon">🌾</div>
+      <div class="pc-name">Farinha de Trigo</div>
+      <div class="pc-sector">Moagem · Ingredientes industriais</div>
+      <div class="pc-tags">
+        <span class="pc-tag tag-cont">Produção contínua</span>
+        <span class="pc-tag tag-mass">Commodity</span>
+      </div>
+    </div>
+  </div>
+  <div class="product-grid-2">
+    <div class="product-card" onclick="selectProduct('farmaceutico', this)">
+      <div class="pc-icon">💊</div>
+      <div class="pc-name">Medicamento Genérico</div>
+      <div class="pc-sector">Farmacêutico · Produção regulada</div>
+      <div class="pc-tags">
+        <span class="pc-tag tag-batch">Batelada</span>
+        <span class="pc-tag tag-mass">Rastreabilidade</span>
+      </div>
+    </div>
+    <div class="product-card" onclick="selectProduct('autoeletrico', this)">
+      <div class="pc-icon">🚗</div>
+      <div class="pc-name">Automóvel Elétrico</div>
+      <div class="pc-sector">Indústria Automotiva · Alta variedade</div>
+      <div class="pc-tags">
+        <span class="pc-tag tag-cont">Produção em linha</span>
+        <span class="pc-tag tag-disc">Crescimento</span>
+      </div>
+    </div>
+    <div class="product-card proj-card" onclick="selectProduct('projeto', this)">
+      <div class="pc-icon">🏗️</div>
+      <div class="pc-name">Construção Civil sob encomenda</div>
+      <div class="pc-sector">Serviços · Produção por projeto</div>
+      <div class="pc-tags">
+        <span class="pc-tag tag-proj">Produção por projeto</span>
+        <span class="pc-tag tag-serv">Customizado</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BANNER PRODUTO SELECIONADO -->
+<div class="section" id="selectedBannerWrap" style="display:none;padding-top:0">
+  <div class="selected-banner" id="selectedBanner">
+    <div class="sb-icon" id="sb-icon"></div>
+    <div class="sb-info">
+      <div class="sb-name" id="sb-name"></div>
+      <div class="sb-desc" id="sb-desc"></div>
+      <div class="sb-tags" id="sb-tags"></div>
+    </div>
+    <button class="btn-change" onclick="changeProduct()">↺ Trocar produto</button>
+  </div>
+</div>
+
+<!-- MÓDULOS -->
+<div class="modules-section" id="modulesSection" style="display:none">
+  <div class="journey-label">
+    <div class="journey-line"></div>
+    <div class="journey-text">Passo 2 — Escolha um módulo para simular</div>
+    <div class="journey-line"></div>
+  </div>
+
+  <div class="modules-grid">
+
+    <!-- 1. Previsão de demanda — DISPONÍVEL -->
+    <div class="module-card active-module available" onclick="goModule('demanda')">
+      <div class="mod-step"><div class="step-num">1</div>Ponto de partida</div>
+      <div class="mod-icon">📈</div>
+      <div class="mod-name">Previsão e Gestão da Demanda</div>
+      <div class="mod-desc">Métodos qualitativos e quantitativos: Delphi, médias móveis, suavização exponencial, Holt-Winters e regressão. Compare erros e interprete resultados.</div>
+      <div class="mod-tags">
+        <span class="mod-tag tag-apo2">APO II</span>
+        <span class="mod-tag tag-quant">Quantitativo</span>
+      </div>
+      <div class="mod-status status-live">● Disponível</div>
+      <button class="mod-btn go" onclick="goModule('demanda')">Abrir simulador →</button>
+    </div>
+
+    <!-- 2. Sistema de Produção — DISPONÍVEL -->
+    <div class="module-card active-module available" onclick="goModule('sistema')">
+      <div class="mod-step"><div class="step-num">2</div>Projeto do sistema</div>
+      <div class="mod-icon">⚙️</div>
+      <div class="mod-name">Sistema de Produção e os 4 V's</div>
+      <div class="mod-desc">Classifique o sistema produtivo pelo volume, variedade, variação e visibilidade. Identifique o tipo de processo mais adequado ao produto escolhido.</div>
+      <div class="mod-tags"><span class="mod-tag tag-apo1">APO I</span><span class="mod-tag tag-qual">Qualitativo</span></div>
+      <div class="mod-status status-live">● Disponível</div>
+      <button class="mod-btn go" onclick="goModule('sistema')">Abrir simulador →</button>
+    </div>
+
+    <!-- 3. Localização — DISPONÍVEL -->
+    <div class="module-card active-module available" onclick="goModule('localizacao')">
+      <div class="mod-step"><div class="step-num">3</div>Onde produzir</div>
+      <div class="mod-icon">📍</div>
+      <div class="mod-name">Localização de Instalações</div>
+      <div class="mod-desc">Método do centroide e análise de fatores ponderados. Avalie trade-offs entre fontes de insumos, mercado consumidor e custos logísticos.</div>
+      <div class="mod-tags"><span class="mod-tag tag-apo1">APO I</span><span class="mod-tag tag-quant">Quantitativo</span></div>
+      <div class="mod-status status-live">● Disponível</div>
+      <button class="mod-btn go" onclick="goModule('localizacao')">Abrir simulador →</button>
+    </div>
+
+    <!-- 4. Capacidade — DISPONÍVEL -->
+    <div class="module-card active-module available" onclick="goModule('capacidade')">
+      <div class="mod-step"><div class="step-num">4</div>Quanto produzir</div>
+      <div class="mod-icon">⚡</div>
+      <div class="mod-name">Planejamento da Capacidade Produtiva</div>
+      <div class="mod-desc">Dimensione recursos, identifique gargalos e avalie estratégias de capacidade: acompanhar, antecipar ou nivelar a demanda.</div>
+      <div class="mod-tags"><span class="mod-tag tag-apo1">APO I</span><span class="mod-tag tag-quant">Quantitativo</span></div>
+      <div class="mod-status status-live">● Disponível</div>
+      <button class="mod-btn go" onclick="goModule('capacidade')">Abrir simulador →</button>
+    </div>
+
+    <!-- 5. Arranjo Físico — DISPONÍVEL -->
+    <div class="module-card active-module available" onclick="goModule('arranjo')">
+      <div class="mod-step"><div class="step-num">5</div>Como organizar</div>
+      <div class="mod-icon">🏭</div>
+      <div class="mod-name">Arranjo Físico e Fluxo</div>
+      <div class="mod-desc">Compare layouts posicional, funcional, celular e em linha. Analise fluxo de materiais, distâncias percorridas e adequação ao sistema produtivo.</div>
+      <div class="mod-tags"><span class="mod-tag tag-apo1">APO I</span><span class="mod-tag tag-qual">Qualitativo</span></div>
+      <div class="mod-status status-live">● Disponível</div>
+      <button class="mod-btn go" onclick="goModule('arranjo')">Abrir simulador →</button>
+    </div>
+
+    <div class="module-card coming">
+      <div class="mod-step"><div class="step-num">6</div>Médio prazo</div>
+      <div class="mod-icon">📋</div>
+      <div class="mod-name">Planejamento Agregado da Produção</div>
+      <div class="mod-desc">Monte planos de produção agregados e compare estratégias: nivelamento, perseguição da demanda e plano misto. Analise custos e estoques.</div>
+      <div class="mod-tags"><span class="mod-tag tag-apo2">APO II</span><span class="mod-tag tag-quant">Quantitativo</span></div>
+      <div class="mod-status status-soon">Em breve</div>
+      <button class="mod-btn locked" disabled>Em desenvolvimento</button>
+    </div>
+
+    <div class="module-card coming">
+      <div class="mod-step"><div class="step-num">7</div>Curto prazo</div>
+      <div class="mod-icon">📅</div>
+      <div class="mod-name">Planejamento Mestre da Produção (PMP)</div>
+      <div class="mod-desc">Desagregue o plano agregado em ordens específicas por produto. Verifique disponibilidade, calcule ATP e analise viabilidade.</div>
+      <div class="mod-tags"><span class="mod-tag tag-apo2">APO II</span><span class="mod-tag tag-quant">Quantitativo</span></div>
+      <div class="mod-status status-soon">Em breve</div>
+      <button class="mod-btn locked" disabled>Em desenvolvimento</button>
+    </div>
+
+    <div class="module-card coming">
+      <div class="mod-step"><div class="step-num">8</div>Materiais</div>
+      <div class="mod-icon">🔩</div>
+      <div class="mod-name">MRP — Planejamento de Recursos Materiais</div>
+      <div class="mod-desc">Construa a árvore do produto, defina lead times e estoques iniciais. Exploda necessidades e gere ordens de compra e produção.</div>
+      <div class="mod-tags"><span class="mod-tag tag-apo2">APO II</span><span class="mod-tag tag-quant">Quantitativo</span></div>
+      <div class="mod-status status-soon">Em breve</div>
+      <button class="mod-btn locked" disabled>Em desenvolvimento</button>
+    </div>
+
+    <div class="module-card coming">
+      <div class="mod-step"><div class="step-num">9</div>Chão de fábrica</div>
+      <div class="mod-icon">🗓️</div>
+      <div class="mod-name">Sequenciamento e Programação da Produção</div>
+      <div class="mod-desc">Compare regras de sequenciamento (FIFO, SPT, EDD, Johnson) em múltiplas máquinas. Visualize o gráfico de Gantt e avalie makespan e atrasos.</div>
+      <div class="mod-tags"><span class="mod-tag tag-apo2">APO II</span><span class="mod-tag tag-quant">Quantitativo</span></div>
+      <div class="mod-status status-soon">Em breve</div>
+      <button class="mod-btn locked" disabled>Em desenvolvimento</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div>APO Lab · UFRRJ · Departamento de Administração e Turismo · Campus Nova Iguaçu</div>
+  <div>Prof.ª Christiane Aguiar de Andrade · IM796 + IM798 · <a href="https://apolab-ufrrj.netlify.app" target="_blank">apolab-ufrrj.netlify.app</a></div>
+</footer>
+
+<!-- HINT FLUTUANTE -->
+<div class="overlay-hint" id="hint">
+  <span>👇</span> Escolha um produto para começar a jornada
+</div>
+
+<script>
+const PRODUCTS = {
+  isotonica: {
+    icon:'🧃', name:'Bebida Isotônica',
+    desc:'Produto de consumo de massa com sazonalidade de verão e produção contínua em grande escala.',
+    tags:['Produção contínua','Alta escala','Sazonal','Produto maduro'],
+    url:'https://apolab-ufrrj.netlify.app'
+  },
+  sorvete: {
+    icon:'🍦', name:'Sorvete Premium',
+    desc:'Produção em batelada com forte sazonalidade. Demanda concentrada no verão com crescimento de portfólio.',
+    tags:['Produção em batelada','Sazonal','Crescimento','Premium'],
+    url:'https://apolab-ufrrj.netlify.app'
+  },
+  farinha: {
+    icon:'🌾', name:'Farinha de Trigo',
+    desc:'Commodity agroindustrial com demanda estável e produção contínua. Baixa diferenciação e alto volume.',
+    tags:['Produção contínua','Commodity','Demanda estável','Produto maduro'],
+    url:'https://apolab-ufrrj.netlify.app'
+  },
+  farmaceutico: {
+    icon:'💊', name:'Medicamento Genérico',
+    desc:'Produção em batelada com controle rigoroso de qualidade e rastreabilidade. Demanda estável e previsível, sujeita a regulação sanitária.',
+    tags:['Produção em batelada','Regulação sanitária','Rastreabilidade','Demanda estável'],
+    url:'https://apolab-ufrrj.netlify.app'
+  },
+  autoeletrico: {
+    icon:'🚗', name:'Automóvel Elétrico',
+    desc:'Produção em linha com alto volume e grande variedade de configurações. Demanda crescente, relativamente estável. Sistema produtivo de massa com elementos de customização.',
+    tags:['Produção em linha','Alta variedade','Crescimento','Indústria automotiva'],
+    url:'https://apolab-ufrrj.netlify.app'
+  },
+  projeto: {
+    icon:'🏗️', name:'Construção Civil sob encomenda',
+    desc:'Produção por projeto: único, customizado, alta complexidade. Modelo radicalmente diferente dos produtos de série.',
+    tags:['Produção por projeto','Alta customização','Unicidade','Gestão de projetos'],
+    url:'https://apolab-ufrrj.netlify.app'
+  }
+};
+
+let selected = null;
+
+function selectProduct(key, el) {
+  selected = key;
+  document.querySelectorAll('.product-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  updateBanner(key);
+  document.getElementById('hint').style.display = 'none';
+}
+
+function updateBanner(key) {
+  const p = PRODUCTS[key];
+  document.getElementById('sb-icon').textContent = p.icon;
+  document.getElementById('sb-name').textContent = p.name;
+  document.getElementById('sb-desc').textContent = p.desc;
+  document.getElementById('sb-tags').innerHTML = p.tags.map(t=>`<span class="sb-tag">${t}</span>`).join('');
+  document.getElementById('selectedBannerWrap').style.display = 'block';
+  document.getElementById('modulesSection').style.display = 'block';
+  // highlight journey flow
+  document.querySelectorAll('.flow-step').forEach(s => s.classList.remove('active-flow'));
+  document.querySelector('.flow-step[data-mod="demanda"]').classList.add('active-flow');
+  // scroll suave até os módulos
+  setTimeout(()=>{
+    document.getElementById('modulesSection').scrollIntoView({behavior:'smooth', block:'start'});
+  }, 100);
+}
+
+function changeProduct() {
+  selected = null;
+  document.querySelectorAll('.product-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('selectedBannerWrap').style.display = 'none';
+  document.getElementById('modulesSection').style.display = 'none';
+  document.getElementById('hint').style.display = 'flex';
+  document.getElementById('productSection').scrollIntoView({behavior:'smooth'});
+}
+
+// URLs de cada módulo
+const MODULE_URLS = {
+  demanda:     'https://apo-previsao.netlify.app',
+  localizacao: 'https://apo-localizacao.netlify.app',
+  sistema:     'https://apo-producao.netlify.app',
+  capacidade:  'https://apo-capacidade.netlify.app',
+  arranjo:     'https://apo-arranjo.netlify.app',
+  agregado:'https://apo-agregado.netlify.app', pmp:null, mrp:null, sequencia:null,
+};
+
+const APOLAB_URL = window.location.href.split('?')[0];
+
+function goModule(mod) {
+  if (!selected) {
+    document.getElementById('productSection').scrollIntoView({behavior:'smooth'});
+    return;
+  }
+  const base = MODULE_URLS[mod];
+  if (!base) return;
+  // passa produto, módulo atual e URL de retorno ao APO Lab
+  const params = new URLSearchParams({
+    produto: selected,
+    modulo:  mod,
+    origem:  'apolab',
+    voltar:  APOLAB_URL
+  });
+  window.open(`${base}?${params.toString()}`, '_blank');
+}
+
+// highlight flow ao scroll
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if(e.isIntersecting && e.target.id === 'modulesSection') {
+      document.querySelectorAll('.flow-step').forEach(s => s.classList.remove('active-flow'));
+      if(selected) document.querySelector('.flow-step[data-mod="demanda"]').classList.add('active-flow');
+    }
+  });
+}, {threshold:0.1});
+observer.observe(document.getElementById('modulesSection'));
+</script>
+</body>
+</html>

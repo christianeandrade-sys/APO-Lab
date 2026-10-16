@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capacidade Produtiva · APO Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#12100e;--paper:#f7f4ee;--cream:#ede9df;
+  --red:#bf4020;--blue:#1d4e8f;--green:#1a7a5e;--gold:#b8860b;
+  --orange:#0a325c;--muted:#756e62;--border:#cec8bc;--white:#fff;
+  --shadow-sm:0 1px 4px rgba(18,16,14,.07);
+  --shadow:0 3px 14px rgba(18,16,14,.10);
+  --shadow-lg:0 8px 32px rgba(18,16,14,.14);
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.6}
+
+/* TOPBAR */
+.topbar{background:#0a325c;color:var(--paper);padding:0;position:fixed;top:0;left:0;right:0;z-index:200;border-bottom:4px solid #4ca456}
+.topbar-inner{padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.topbar-left{display:flex;align-items:center;gap:18px}
+.topbar-logo{height:48px;width:auto;filter:brightness(0) invert(1) drop-shadow(0 0 2px rgba(255,255,255,.6));opacity:1;flex-shrink:0}
+.topbar-logo-fallback{display:none;font-family:'Fraunces',serif;font-size:18px;font-weight:900;color:white;letter-spacing:-.5px;line-height:1}
+.topbar-divider{width:1px;height:40px;background:rgba(255,255,255,.2);flex-shrink:0}
+.topbar-title{font-family:'Fraunces',serif;font-size:20px;font-weight:900;letter-spacing:-.3px;line-height:1.2}
+.topbar-sub{font-size:11px;color:#bbb;letter-spacing:.6px;margin-top:3px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.inst-bar{background:#062848;border-top:1px solid rgba(255,255,255,.1);padding:5px 28px;display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.3px}
+.inst-sep{color:#555;margin:0 3px}
+.btn-restart{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;border:1.5px solid #555;background:transparent;color:#ccc;cursor:pointer;transition:all .2s}
+.btn-restart:hover{border-color:#aaa;color:white}
+
+/* JOURNEY BAR */
+.journey-bar{position:fixed;top:96px;left:0;right:0;z-index:190;background:#0d1f35;border-bottom:2px solid #4ca456;padding:0 20px;display:none;align-items:center;justify-content:space-between;gap:12px;height:56px}
+.jb-left{display:flex;align-items:center;gap:10px;min-width:0}
+.jb-back{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.25);background:transparent;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.jb-back:hover{border-color:#fff;color:white}
+.jb-steps{display:flex;align-items:center;overflow-x:auto;scrollbar-width:none}
+.jb-steps::-webkit-scrollbar{display:none}
+.jb-step{display:flex;align-items:center;gap:5px;padding:5px 11px;font-size:13px;font-weight:500;color:rgba(255,255,255,.8);white-space:nowrap;flex-shrink:0;border-radius:20px}
+.jb-step.current{color:#fff;background:#0a325c;border:2px solid #4ca456;font-weight:700}
+.jb-step.done{color:#4ca456}
+.jb-step.clickable{cursor:pointer;}
+.jb-step.clickable:hover{background:rgba(255,255,255,0.12);}
+.jb-step-icon{font-size:12px}
+.jb-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.jb-product{font-size:12px;font-weight:700;color:#fff;background:#4ca456;padding:4px 13px;border-radius:20px;border:none}
+.jb-nav-btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.6);cursor:pointer;white-space:nowrap;transition:all .2s}
+.jb-nav-btn:hover{border-color:rgba(255,255,255,.5);color:#fff}
+.jb-nav-btn.active{border-color:#4ca456;color:#4ca456}
+.jb-nav-btn.active:hover{background:#4ca456;color:white}
+
+/* WRAPPER */
+.app{padding-top:96px;min-height:100vh}
+.app.has-journey{padding-top:152px}
+
+/* ONBOARDING */
+#onboarding{position:fixed;inset:0;top:96px;background:var(--paper);z-index:100;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px 60px}
+.app.has-journey #onboarding{top:152px}
+.ob-card{width:100%;max-width:800px;animation:slideUp .45s cubic-bezier(.22,1,.36,1) both}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.ob-step-label{display:inline-flex;align-items:center;gap:8px;font-size:10px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.ob-step-num{width:22px;height:22px;border-radius:50%;background:var(--orange);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ob-title{font-family:'Fraunces',serif;font-size:30px;font-weight:900;line-height:1.15;margin-bottom:8px}
+.ob-subtitle{font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.5;max-width:600px}
+.ob-tip{background:var(--cream);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:24px}
+.ob-tip strong{color:var(--ink)}
+.ob-nav{display:flex;justify-content:space-between;align-items:center;margin-top:16px}
+.btn-back-ob{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:10px 20px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s}
+.btn-back-ob:hover{border-color:var(--ink);color:var(--ink)}
+.btn-next{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:11px 28px;border-radius:8px;border:none;background:var(--orange);color:white;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px}
+.btn-next:hover{background:#a05000;transform:translateY(-1px)}
+.btn-next:disabled{background:#ccc;cursor:not-allowed;transform:none}
+.btn-launch{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:13px 32px;border-radius:8px;border:none;background:var(--ink);color:white;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px}
+.btn-launch:hover{background:#2a2520;transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+
+/* PRODUCT GRID */
+.prod-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:28px}
+.prod-card{background:var(--white);border:2px solid var(--border);border-radius:8px;padding:14px;cursor:pointer;transition:all .2s;position:relative}
+.prod-card:hover{border-color:var(--orange);transform:translateY(-2px);box-shadow:var(--shadow)}
+.prod-card.selected{border-color:var(--orange);background:#fff8f0}
+.prod-card.selected::after{content:'✓';position:absolute;top:8px;right:10px;font-size:12px;font-weight:700;color:var(--orange)}
+.pc-icon{font-size:24px;margin-bottom:6px}
+.pc-name{font-weight:700;font-size:13px}
+.pc-sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+/* ESTRATÉGIA CARDS */
+.strategy-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:28px}
+.strategy-card{background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:18px 16px;cursor:pointer;transition:all .2s;position:relative}
+.strategy-card:hover{border-color:var(--orange);transform:translateY(-2px);box-shadow:var(--shadow)}
+.strategy-card.selected{border-color:var(--orange);background:#fff8f0}
+.strategy-card.selected::after{content:'✓';position:absolute;top:10px;right:12px;font-size:13px;font-weight:700;color:var(--orange)}
+.sc-icon{font-size:26px;margin-bottom:8px}
+.sc-name{font-weight:700;font-size:14px;margin-bottom:4px}
+.sc-desc{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:8px}
+.sc-tag{font-size:9px;font-weight:600;padding:2px 8px;border-radius:4px;display:inline-block;letter-spacing:.4px}
+.tag-cons{background:#dbeafe;color:#1e40af}
+.tag-risk{background:#fee2e2;color:#991b1b}
+.tag-bal{background:#d1fae5;color:#065f46}
+
+/* TOOLTIPS */
+.tip-wrap{position:relative;display:inline-flex;align-items:center}
+.tip-icon{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:var(--border);color:var(--muted);font-size:9px;font-weight:700;cursor:help;flex-shrink:0;margin-left:5px;transition:background .15s;font-style:normal}
+.tip-wrap:hover .tip-icon{background:var(--orange);color:white}
+.tip-balloon{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);width:230px;background:var(--ink);color:var(--paper);border-radius:8px;padding:10px 13px;font-size:11px;line-height:1.6;pointer-events:none;opacity:0;transition:opacity .18s;z-index:999;font-family:'DM Sans',sans-serif;box-shadow:var(--shadow-lg)}
+.tip-balloon::before{content:'';position:absolute;right:100%;top:50%;transform:translateY(-50%);border:6px solid transparent;border-right-color:var(--ink)}
+.tip-balloon strong{color:#fbbf24}
+.tip-wrap:hover .tip-balloon{opacity:1}
+
+/* DASHBOARD */
+#dashboard{display:none}
+.dash-layout{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 96px)}
+.app.has-journey .dash-layout{min-height:calc(100vh - 152px)}
+.dash-sidebar{background:var(--cream);border-right:1px solid var(--border);padding:20px 16px;overflow-y:auto;overflow-x:visible;position:sticky;top:96px;max-height:calc(100vh - 96px)}
+.app.has-journey .dash-sidebar{top:152px;max-height:calc(100vh - 152px)}
+.sb-lbl{font-size:9px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.sb-section{margin-bottom:18px}
+.ctx-pill{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:8px;font-size:12px}
+.ctx-pill-row{display:flex;justify-content:space-between;align-items:baseline}
+.ctx-pill-key{font-size:10px;color:var(--muted);font-weight:600}
+.ctx-pill-val{font-weight:600;font-size:12px}
+.v-tab{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:7px;cursor:pointer;border:1.5px solid transparent;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);transition:all .2s;text-align:left;width:100%;margin-bottom:5px}
+.v-tab:hover{background:rgba(192,96,0,.06)}
+.v-tab.active{background:var(--ink);color:white}
+.v-tab-icon{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.v-tab.active .v-tab-icon{background:rgba(255,255,255,.12)}
+.v-tab:not(.active) .v-tab-icon{background:rgba(18,16,14,.07)}
+.v-tab-name{font-weight:600;font-size:11px}
+.v-tab-sub{font-size:10px;color:var(--muted);margin-top:1px}
+.v-tab.active .v-tab-sub{color:rgba(255,255,255,.55)}
+.btn-run{width:100%;margin-top:6px;padding:11px;background:var(--orange);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-run:hover{background:#a05000;transform:translateY(-1px)}
+.ctrl-group{margin-bottom:12px}
+.ctrl-lbl-row{display:flex;align-items:center;margin-bottom:4px}
+.ctrl-lbl{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.3px}
+.ctrl-range{width:100%;accent-color:var(--orange)}
+.ctrl-range-row{display:flex;align-items:center;gap:8px}
+.ctrl-val{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--orange);min-width:50px;text-align:right}
+.ctrl-input{width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;background:white;font-family:'DM Mono',monospace;font-size:12px;color:var(--ink);outline:none;transition:border-color .2s}
+.ctrl-input:focus{border-color:var(--orange)}
+
+/* MAIN */
+.dash-main{padding:24px 28px;overflow-y:auto}
+.method-banner{background:var(--white);border:1.5px solid var(--border);border-left:4px solid var(--orange);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;gap:14px;align-items:flex-start}
+.mb-icon{font-size:26px;flex-shrink:0;margin-top:2px}
+.mb-title{font-family:'Fraunces',serif;font-size:17px;font-weight:700;margin-bottom:3px}
+.mb-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.mb-tags{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.mb-tag{font-size:9px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--cream);color:var(--muted);letter-spacing:.4px}
+
+/* MÉTRICAS */
+.metrics-row{display:grid;gap:12px;margin-bottom:18px}
+.metric-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--shadow-sm)}
+.metric-card.hi{border-color:var(--orange)}
+.metric-card.ok{border-color:var(--green)}
+.metric-card.warn{border-color:var(--gold)}
+.metric-card.bad{border-color:var(--red)}
+.mc-lbl{font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px}
+.mc-val{font-family:'DM Mono',monospace;font-size:22px;font-weight:500}
+.metric-card.hi .mc-val{color:var(--orange)}
+.metric-card.ok .mc-val{color:var(--green)}
+.metric-card.warn .mc-val{color:var(--gold)}
+.metric-card.bad .mc-val{color:var(--red)}
+.mc-sub{font-size:10px;color:var(--muted);margin-top:3px}
+
+/* FORMULA */
+.formula-box{background:#12100e;color:#e2e8f0;border-radius:var(--r);padding:14px 18px;margin-bottom:18px;font-family:'DM Mono',monospace;font-size:12px;line-height:1.9}
+.fb-title{color:#94a3b8;font-size:9px;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-family:'DM Sans',sans-serif}
+.fv{color:#fbbf24}.fo{color:#818cf8}.fn{color:#34d399}.fc{color:#475569;font-style:italic}
+
+/* GRÁFICOS E TABELAS */
+.chart-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:18px;box-shadow:var(--shadow-sm)}
+.cc-title{font-family:'Fraunces',serif;font-size:15px;font-weight:700;margin-bottom:4px}
+.cc-sub{font-size:11px;color:var(--muted);margin-bottom:16px}
+canvas{max-height:320px}
+.table-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow-sm)}
+.tc-header{padding:12px 18px;background:var(--cream);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.tc-title{font-weight:600;font-size:12px}
+table{width:100%;border-collapse:collapse}
+thead th{padding:9px 14px;text-align:left;font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);background:var(--cream);border-bottom:1px solid var(--border)}
+tbody td{padding:9px 14px;font-size:12px;border-bottom:1px solid var(--border)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--cream)}
+.td-mono{font-family:'DM Mono',monospace}
+.td-bold{font-weight:700}
+.td-ok{color:var(--green);font-weight:700}
+.td-warn{color:var(--gold);font-weight:700}
+.td-bad{color:var(--red);font-weight:700}
+.badge-ok{background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700}
+.badge-warn{background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700}
+.badge-bad{background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700}
+
+/* INSIGHT */
+.insight-box{background:linear-gradient(135deg,#fff8f0,#fef3e8);border:1.5px solid #e8c8a0;border-radius:var(--r);padding:16px 20px;margin-bottom:18px}
+.insight-title{font-weight:700;font-size:13px;color:var(--orange);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.insight-text{font-size:12px;color:var(--ink);line-height:1.7}
+.insight-text strong{color:var(--orange)}
+
+/* GARGALO */
+.gargalo-bar{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:16px 18px;margin-bottom:18px}
+.gb-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.gb-row:last-child{margin-bottom:0}
+.gb-name{font-size:11px;font-weight:600;min-width:130px;flex-shrink:0}
+.gb-bar-bg{flex:1;height:20px;background:var(--cream);border-radius:4px;overflow:hidden;position:relative}
+.gb-bar-fill{height:100%;border-radius:4px;transition:width .6s ease;display:flex;align-items:center;padding-left:6px}
+.gb-bar-text{font-size:9px;font-weight:700;color:white;white-space:nowrap}
+.gb-pct{font-size:11px;font-weight:700;min-width:44px;text-align:right;font-family:'DM Mono',monospace}
+.gb-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:4px;white-space:nowrap}
+
+/* ESTRATÉGIA COMPARAÇÃO */
+.strat-compare{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.strat-card-result{background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:16px;text-align:center}
+.strat-card-result.active{border-color:var(--orange);background:#fff8f0}
+.scr-icon{font-size:24px;margin-bottom:6px}
+.scr-name{font-weight:700;font-size:12px;margin-bottom:10px}
+.scr-metric{margin-bottom:6px}
+.scr-metric-lbl{font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.scr-metric-val{font-family:'DM Mono',monospace;font-size:15px;font-weight:600;color:var(--ink)}
+
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;animation:spin .55s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade-in{animation:fadeIn .35s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-icon{font-size:44px;margin-bottom:12px}
+
+@media(max-width:860px){
+  .dash-layout{grid-template-columns:1fr}
+  .strategy-grid{grid-template-columns:1fr}
+  .strat-compare{grid-template-columns:1fr}
+  .prod-grid{grid-template-columns:1fr 1fr}
+}
+
+.home-btn{
+  display:flex;align-items:center;gap:5px;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
+  color:rgba(255,255,255,.75);text-decoration:none;
+  padding:5px 12px;border-radius:20px;
+  border:1px solid rgba(255,255,255,.25);
+  transition:background .15s,color .15s;cursor:pointer;background:transparent;
+}
+.home-btn:hover{background:rgba(255,255,255,.12);color:#fff;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <img class="topbar-logo" src="https://institucional.ufrrj.br/ccs/files/2019/06/rural_logo01.png" alt="UFRRJ" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="topbar-logo-fallback">UFRRJ</div>
+      <div class="topbar-divider"></div>
+      <div>
+        <div class="topbar-title">APO Lab · Planejamento da capacidade</div>
+        <div class="topbar-sub">Ambiente simulado de Produção e Operações</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-restart" onclick="restartOnboarding()">↺ Reiniciar</button>
+    
+    <button class="home-btn" onclick="voltarHome()" title="Voltar ao APO Lab">🏠 Home</button>
+  </div>
+  </div>
+  <div class="inst-bar">
+    <span>Universidade Federal Rural do Rio de Janeiro</span>
+    <span class="inst-sep">·</span>
+    <span>Curso de Administração · Campus Nova Iguaçu</span>
+    <span class="inst-sep">·</span>
+    <span>Baseado nas disciplinas da área de Produção e Operações</span>
+  </div>
+</header>
+
+<div class="journey-bar" id="journeyBar">
+  <div class="jb-left">
+    <button class="jb-back" onclick="voltarApoLab()">← APO Lab</button>
+    <div class="jb-steps" id="jbSteps"></div>
+  </div>
+  <div class="jb-right">
+    <div class="jb-product" id="jbProduct"></div>
+    <button class="jb-nav-btn" onclick="irModulo('modelo')">← Modelo de Produção</button>
+    <button class="jb-nav-btn active" onclick="irModulo('arranjo')">Arranjo Físico →</button>
+  </div>
+</div>
+
+<div class="app" id="appWrap">
+<div id="onboarding">
+<div class="ob-card">
+
+  <!-- STEP 1: PRODUTO -->
+  <div id="step1">
+    <div class="ob-step-label"><div class="ob-step-num">1</div>Etapa 1 de 2</div>
+    <div class="ob-title">Planejamento da Capacidade</div>
+    <div class="ob-subtitle">O planejamento da capacidade define quantos recursos produtivos são necessários para atender a demanda prevista. O produto já foi selecionado na tela inicial do APO Lab.</div>
+    <div class="ob-tip"><strong>Capacidade produtiva</strong> é o volume máximo de produção que um sistema pode atingir em determinado período, nas condições normais de operação. O planejamento da capacidade responde à pergunta: temos recursos suficientes para atender a demanda? (SLACK; BRANDON-JONES; JOHNSTON, 2018; MOREIRA, 2012)</div>
+    <div class="ob-nav">
+      <span></span>
+      <button class="btn-next" id="btnNext1" onclick="goStep(2)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: ESTRATÉGIA -->
+  <div id="step2" style="display:none">
+    <div class="ob-step-label"><div class="ob-step-num">2</div>Etapa 2 de 2</div>
+    <div class="ob-title" id="step2title">Qual estratégia de capacidade?</div>
+    <div class="ob-subtitle">A estratégia define como a capacidade se posiciona em relação à demanda prevista ao longo do tempo. Cada abordagem tem trade-offs distintos entre custo e risco de perda de vendas.</div>
+    <div class="ob-tip" id="step2tip"></div>
+    <div class="strategy-grid">
+      <div class="strategy-card" onclick="selectStrategy('lead',this)">
+        <div class="sc-icon">🚀</div>
+        <div class="sc-name">Antecipação (Lead)</div>
+        <div class="sc-desc">A capacidade é ampliada <em>antes</em> da demanda crescer. A empresa aposta no crescimento e aceita alguma ociosidade no início.</div>
+        <span class="sc-tag tag-risk">Risco: ociosidade</span>
+      </div>
+      <div class="strategy-card" onclick="selectStrategy('lag',this)">
+        <div class="sc-icon">🐢</div>
+        <div class="sc-name">Acompanhamento (Lag)</div>
+        <div class="sc-desc">A capacidade é ampliada <em>depois</em> que a demanda já se consolidou. Minimiza ociosidade, mas pode gerar falta de produto.</div>
+        <span class="sc-tag tag-risk">Risco: perda de vendas</span>
+      </div>
+      <div class="strategy-card" onclick="selectStrategy('match',this)">
+        <div class="sc-icon">⚖️</div>
+        <div class="sc-name">Acompanhamento gradual (Match)</div>
+        <div class="sc-desc">Expansões menores e frequentes, buscando manter a capacidade próxima à demanda ao longo do tempo. Equilibra os dois riscos.</div>
+        <span class="sc-tag tag-bal">Equilíbrio entre riscos</span>
+      </div>
+    </div>
+    <div class="ob-nav">
+      <button class="btn-back-ob" onclick="goStep(1)">← Voltar</button>
+      <button class="btn-launch" onclick="launchDashboard()"><span>🚀</span> Iniciar Simulação</button>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="dash-layout">
+    <aside class="dash-sidebar">
+      <div class="sb-section">
+        <div class="sb-lbl">Contexto</div>
+        <div class="ctx-pill" id="ctxPill"></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-lbl">Parâmetros de capacidade</div>
+        <div id="paramSection"></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-lbl">Visualização</div>
+        <div id="viewTabs"></div>
+      </div>
+      <button class="btn-run" onclick="runSimulation()" id="btnRun">
+        <span>▶</span> Calcular
+      </button>
+    </aside>
+    <main class="dash-main" id="dashMain">
+      <div class="empty-state fade-in">
+        <div class="empty-icon">⚡</div>
+        <div>Ajuste os parâmetros e clique em <strong>Calcular</strong></div>
+      </div>
+    </main>
+  </div>
+</div>
+</div>
+
+<script>
+// ── URL PARAMS ──
+const UP = new URLSearchParams(window.location.search);
+const URL_PRODUTO = UP.get('produto');
+const URL_ORIGEM  = UP.get('origem');
+const URL_VOLTAR  = UP.get('voltar');
+
+const JORNADA = [
+  {id:'demanda',    icon:'📈', name:'Previsão',      url:'https://apo-previsao.netlify.app'},
+  {id:'localizacao',icon:'📍', name:'Localização',   url:'https://apo-localizacao.netlify.app'},
+  {id:'modelo',     icon:'⚙️', name:'Modelo Prod.',  url:'https://apo-producao.netlify.app'},
+  {id:'capacidade', icon:'⚡', name:'Capacidade',    url:'https://apo-capacidade.netlify.app'},
+  {id:'arranjo',    icon:'🏭', name:'Arranjo',       url:'https://apo-arranjo.netlify.app'},
+  {id:'agregado',   icon:'📋', name:'Pl. Agr.',      url:null},
+  {id:'pmp',        icon:'📅', name:'PMP',           url:null},
+  {id:'mrp',        icon:'🔩', name:'MRP',           url:null},
+  {id:'sequencia',  icon:'🗓️', name:'Sequen.',       url:null},
+];
+
+const PRODUCT_NAMES = {
+  isotonica:'🧃 Isotônica', sorvete:'🍦 Sorvete', farinha:'🌾 Farinha',
+  farmaceutico:'💊 Medicamento', autoeletrico:'🚗 Automóvel Elétrico', projeto:'🏗️ Projeto'
+};
+
+// Dados pré-carregados por produto
+const PRODUCT_DATA = {
+  isotonica:{
+    label:'Bebida Isotônica', modelo:'Produção em Massa',
+    demandaMes:18000, tempoUnit:0.5, turnosDia:2, horasTurno:8, diasMes:22,
+    eficiencia:85, tolerancia:10,
+    recursos:[
+      {nome:'Linha de envase',    capacMin:8, takt:0.45},
+      {nome:'Misturador',         capacMin:6, takt:0.30},
+      {nome:'Rotuladora',         capacMin:10,takt:0.55},
+      {nome:'Paletizadora',       capacMin:12,takt:0.60},
+    ],
+    crescimento:[18000,19000,20500,22000,24000,27000,30000,28000,23000,20000,18000,19000]
+  },
+  sorvete:{
+    label:'Sorvete Premium', modelo:'Produção em Lote',
+    demandaMes:8000, tempoUnit:1.2, turnosDia:1, horasTurno:8, diasMes:20,
+    eficiencia:78, tolerancia:15,
+    recursos:[
+      {nome:'Pasteurizador',      capacMin:5, takt:1.0},
+      {nome:'Linha de congelamento',capacMin:4,takt:1.2},
+      {nome:'Embaladeira',        capacMin:6, takt:0.9},
+      {nome:'Câmara fria',        capacMin:3, takt:1.5},
+    ],
+    crescimento:[4000,3500,3000,4500,8000,12000,15000,14000,10000,6000,4000,4200]
+  },
+  farinha:{
+    label:'Farinha de Trigo', modelo:'Produção em Massa',
+    demandaMes:45000, tempoUnit:0.15, turnosDia:3, horasTurno:8, diasMes:25,
+    eficiencia:92, tolerancia:5,
+    recursos:[
+      {nome:'Moinhos',            capacMin:15, takt:0.12},
+      {nome:'Peneiras',           capacMin:18, takt:0.10},
+      {nome:'Ensacadeira',        capacMin:20, takt:0.14},
+      {nome:'Expedição',          capacMin:22, takt:0.16},
+    ],
+    crescimento:[44000,45000,45500,46000,46500,47000,47500,48000,48500,49000,49500,50000]
+  },
+  farmaceutico:{
+    label:'Medicamento Genérico', modelo:'Produção em Lote',
+    demandaMes:480, tempoUnit:0.22, turnosDia:1, horasTurno:8, diasMes:22,
+    eficiencia:88, tolerancia:8,
+    recursos:[
+      {nome:'Pesagem/Granulação',  capacMin:3, takt:0.20},
+      {nome:'Compressão/Envase',   capacMin:4, takt:0.22},
+      {nome:'Rotuladora',          capacMin:5, takt:0.18},
+      {nome:'Inspeção/Quarentena', capacMin:2, takt:0.30},
+    ],
+    crescimento:[470,472,475,478,480,482,485,488,490,495,500,510]
+  },
+  autoeletrico:{
+    label:'Automóvel Elétrico', modelo:'Produção em Massa',
+    demandaMes:1200, tempoUnit:18, turnosDia:2, horasTurno:8, diasMes:22,
+    eficiencia:88, tolerancia:8,
+    recursos:[
+      {nome:'Estamparia',         capacMin:0.5, takt:16},
+      {nome:'Montagem de bateria',capacMin:0.4, takt:20},
+      {nome:'Pintura',            capacMin:0.6, takt:18},
+      {nome:'Montagem final',     capacMin:0.35,takt:22},
+    ],
+    crescimento:[800,900,950,1000,1050,1100,1150,1200,1250,1300,1380,1450]
+  },
+  projeto:{
+    label:'Construção sob encomenda', modelo:'Produção por Projeto',
+    demandaMes:2, tempoUnit:2400, turnosDia:1, horasTurno:8, diasMes:22,
+    eficiencia:70, tolerancia:25,
+    recursos:[
+      {nome:'Equipe de projetos',  capacMin:0.2, takt:2000},
+      {nome:'Equipe de execução',  capacMin:0.15,takt:2400},
+      {nome:'Equip. pesado',       capacMin:0.3, takt:1800},
+      {nome:'Equipe de acabamento',capacMin:0.25,takt:2200},
+    ],
+    crescimento:[1,2,2,3,2,2,3,2,2,3,2,2]
+  }
+};
+
+const VIEWS = [
+  {id:'dimensionamento', icon:'📐', name:'Dimensionamento',      sub:'Cálculo da capacidade necessária'},
+  {id:'gargalo',         icon:'🔴', name:'Análise de gargalos',   sub:'Recurso limitante do sistema'},
+  {id:'estrategia',      icon:'📊', name:'Estratégias de expansão',sub:'Lead, lag e match'},
+  {id:'utilizacao',      icon:'📈', name:'Taxa de utilização',    sub:'Evolução ao longo do ano'},
+];
+
+let STATE = {
+  product: URL_PRODUTO||'isotonica',
+  strategy: null,
+  view: 'dimensionamento'
+};
+let chartInst = null;
+
+// ── JOURNEY BAR ──
+function initJourneyBar(){
+  const bar = document.getElementById('journeyBar');
+  bar.style.display = 'flex';
+  document.getElementById('appWrap').classList.add('has-journey');
+  const el = document.getElementById('jbSteps');
+  JORNADA.forEach((s,i)=>{
+    const d = document.createElement('div');
+    d.className = 'jb-step'+(s.id==='capacidade'?' current':i<3?' done':'');
+    d.innerHTML = `<span class="jb-step-icon">${s.icon}</span>${s.name}`;
+    if(s.url) d.classList.add('clickable');
+    d.onclick = () => { if(s.url) irModulo(s.id); };
+    el.appendChild(d);
+    if(i<JORNADA.length-1){const a=document.createElement('span');a.style.cssText='font-size:9px;color:#2a2520;padding:0 1px;flex-shrink:0';a.textContent='›';el.appendChild(a);}
+  });
+  if(URL_PRODUTO) document.getElementById('jbProduct').textContent = PRODUCT_NAMES[URL_PRODUTO]||URL_PRODUTO;
+}
+function voltarApoLab(){window.location.href=URL_VOLTAR||'https://apolab-ufrrj.netlify.app';}
+function irModulo(mod){
+  const m=JORNADA.find(j=>j.id===mod);
+  if(!m?.url){alert('Módulo em desenvolvimento!');return;}
+  const p=new URLSearchParams({produto:STATE.product,modulo:mod,origem:'apolab',voltar:URL_VOLTAR||window.location.href});
+  window.open(`${m.url}?${p.toString()}`,'_blank');
+}
+
+// ── ONBOARDING ──
+function tip(txt){return `<span class="tip-wrap"><i class="tip-icon">?</i><span class="tip-balloon">${txt}</span></span>`;}
+
+function selectProd(key, el){
+  STATE.product = key;
+  document.querySelectorAll('.prod-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btnNext1').disabled = false;
+  const pd = PRODUCT_DATA[key];
+  document.getElementById('step2title').textContent = `Estratégia de capacidade: ${pd.label}`;
+  document.getElementById('step2tip').innerHTML =
+    `<strong>Contexto:</strong> ${pd.label} — modelo ${pd.modelo}. Demanda de referência: <strong>${pd.demandaMes.toLocaleString('pt-BR')} un./mês</strong>. Tempo de processamento unitário: <strong>${pd.tempoUnit} min/un.</strong> Eficiência operacional estimada: <strong>${pd.eficiencia}%</strong>.`;
+}
+
+function selectStrategy(key, el){
+  STATE.strategy = key;
+  document.querySelectorAll('.strategy-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function goStep(n){
+  [1,2].forEach(i=>document.getElementById('step'+i).style.display=i===n?'block':'none');
+  document.getElementById('onboarding').scrollTo({top:0,behavior:'smooth'});
+}
+
+function launchDashboard(){
+  if(!STATE.strategy) STATE.strategy = 'match';
+  document.getElementById('onboarding').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  buildDashboard();
+  runSimulation();
+}
+
+function restartOnboarding(){
+  STATE.strategy=null; STATE.view='dimensionamento';
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('onboarding').style.display='flex';
+  document.querySelectorAll('.prod-card,.strategy-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('btnNext1').disabled=true;
+  goStep(1);
+}
+
+// ── DASHBOARD ──
+function buildDashboard(){
+  const pd = PRODUCT_DATA[STATE.product];
+  document.getElementById('ctxPill').innerHTML = `
+    <div class="ctx-pill-row"><span class="ctx-pill-key">Produto</span><span class="ctx-pill-val">${PRODUCT_NAMES[STATE.product]}</span></div>
+    <div class="ctx-pill-row"><span class="ctx-pill-key">Modelo</span><span class="ctx-pill-val">${pd.modelo}</span></div>
+    <div class="ctx-pill-row"><span class="ctx-pill-key">Estratégia</span><span class="ctx-pill-val">${{lead:'Antecipação',lag:'Acompanhamento',match:'Match'}[STATE.strategy]}</span></div>`;
+
+  buildParamSection();
+  buildViewTabs();
+}
+
+function buildParamSection(){
+  const pd = PRODUCT_DATA[STATE.product];
+  document.getElementById('paramSection').innerHTML = `
+    <div class="ctrl-group">
+      <div class="ctrl-lbl-row"><span class="ctrl-lbl">Demanda mensal (un.)</span>${tip('<strong>Demanda a atender</strong><br>Quantidade de unidades que o sistema precisa produzir por mês. Altere para simular cenários de crescimento ou retração.')}</div>
+      <input type="number" class="ctrl-input" id="p_demanda" value="${pd.demandaMes}" step="100">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-lbl-row"><span class="ctrl-lbl">Tempo unitário (min/un.)</span>${tip('<strong>Tempo de processamento</strong><br>Tempo médio necessário para produzir uma unidade, em minutos. Inclui processamento, mas não setup.')}</div>
+      <input type="number" class="ctrl-input" id="p_tempo" value="${pd.tempoUnit}" step="0.1">
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-lbl-row"><span class="ctrl-lbl">Turnos por dia</span>${tip('<strong>Turnos de trabalho</strong><br>Número de turnos diários de operação. Cada turno adicional aumenta a capacidade disponível sem novos equipamentos.')}</div>
+      <div class="ctrl-range-row">
+        <input type="range" class="ctrl-range" id="p_turnos" min="1" max="3" step="1" value="${pd.turnosDia}" oninput="document.getElementById('v_turnos').textContent=this.value">
+        <span class="ctrl-val" id="v_turnos">${pd.turnosDia}</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-lbl-row"><span class="ctrl-lbl">Horas por turno</span>${tip('<strong>Jornada por turno</strong><br>Duração de cada turno em horas. O padrão brasileiro é 8h. Horas extras elevam esse valor temporariamente.')}</div>
+      <div class="ctrl-range-row">
+        <input type="range" class="ctrl-range" id="p_horas" min="6" max="12" step="1" value="${pd.horasTurno}" oninput="document.getElementById('v_horas').textContent=this.value">
+        <span class="ctrl-val" id="v_horas">${pd.horasTurno}h</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-lbl-row"><span class="ctrl-lbl">Dias úteis por mês</span>${tip('<strong>Dias de operação</strong><br>Número de dias úteis no mês. Descontar feriados e paradas programadas.')}</div>
+      <div class="ctrl-range-row">
+        <input type="range" class="ctrl-range" id="p_dias" min="15" max="26" step="1" value="${pd.diasMes}" oninput="document.getElementById('v_dias').textContent=this.value">
+        <span class="ctrl-val" id="v_dias">${pd.diasMes}</span>
+      </div>
+    </div>
+    <div class="ctrl-group">
+      <div class="ctrl-lbl-row"><span class="ctrl-lbl">Eficiência operacional (%)</span>${tip('<strong>Fator de eficiência</strong><br>Percentual da capacidade teórica efetivamente aproveitada, descontando paradas, setup, manutenção e variações de ritmo. Valores típicos: 70–95%.')}</div>
+      <div class="ctrl-range-row">
+        <input type="range" class="ctrl-range" id="p_efic" min="50" max="100" step="1" value="${pd.eficiencia}" oninput="document.getElementById('v_efic').textContent=this.value+'%'">
+        <span class="ctrl-val" id="v_efic">${pd.eficiencia}%</span>
+      </div>
+    </div>`;
+}
+
+function buildViewTabs(){
+  const el = document.getElementById('viewTabs');
+  el.innerHTML = '';
+  VIEWS.forEach(v=>{
+    const btn = document.createElement('button');
+    btn.className = 'v-tab'+(STATE.view===v.id?' active':'');
+    btn.innerHTML = `<div class="v-tab-icon">${v.icon}</div><div><div class="v-tab-name">${v.name}</div><div class="v-tab-sub">${v.sub}</div></div>`;
+    btn.onclick = ()=>{STATE.view=v.id;document.querySelectorAll('.v-tab').forEach(t=>t.classList.remove('active'));btn.classList.add('active');runSimulation();};
+    el.appendChild(btn);
+  });
+}
+
+// ── CÁLCULOS BASE ──
+function calcBase(){
+  const demanda   = parseFloat(document.getElementById('p_demanda')?.value||3500);
+  const tempo     = parseFloat(document.getElementById('p_tempo')?.value||1.8);
+  const turnos    = parseInt(document.getElementById('p_turnos')?.value||1);
+  const horas     = parseInt(document.getElementById('p_horas')?.value||8);
+  const dias      = parseInt(document.getElementById('p_dias')?.value||20);
+  const efic      = parseFloat(document.getElementById('p_efic')?.value||72)/100;
+
+  const minDisp   = turnos * horas * 60 * dias;          // minutos disponíveis/mês
+  const capTeorica= minDisp / tempo;                     // unidades teóricas/mês
+  const capEfetiva= capTeorica * efic;                   // unidades reais/mês
+  const utilizacao= (demanda / capEfetiva) * 100;         // %
+  const folga     = capEfetiva - demanda;                 // unidades
+  const maquinas  = Math.ceil(demanda * tempo / (minDisp * efic)); // recursos mínimos
+
+  return {demanda,tempo,turnos,horas,dias,efic,minDisp,capTeorica,capEfetiva,utilizacao,folga,maquinas};
+}
+
+// ── SIMULAÇÃO ──
+function runSimulation(){
+  const btn=document.getElementById('btnRun');
+  btn.innerHTML='<span class="spinner"></span> Calculando...';
+  btn.disabled=true;
+  setTimeout(()=>{doCalc();btn.innerHTML='<span>▶</span> Calcular';btn.disabled=false;},300);
+}
+
+function doCalc(){
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  if(STATE.view==='dimensionamento') renderDimensionamento();
+  else if(STATE.view==='gargalo')    renderGargalo();
+  else if(STATE.view==='estrategia') renderEstrategia();
+  else if(STATE.view==='utilizacao') renderUtilizacao();
+}
+
+// 1. DIMENSIONAMENTO
+function renderDimensionamento(){
+  const b = calcBase();
+  const utilClass = b.utilizacao>100?'bad':b.utilizacao>90?'warn':'ok';
+  const utilLabel = b.utilizacao>100?'Capacidade insuficiente':b.utilizacao>90?'Atenção: margem estreita':'Capacidade adequada';
+  const utilBadge = b.utilizacao>100?'badge-bad':b.utilizacao>90?'badge-warn':'badge-ok';
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">📐</div><div>
+      <div class="mb-title">Dimensionamento da Capacidade Produtiva</div>
+      <div class="mb-desc">Calcula a capacidade teórica e efetiva do sistema, compara com a demanda e determina quantos recursos produtivos são necessários para atendê-la.</div>
+      <div class="mb-tags"><span class="mb-tag">APO I · Planejamento da capacidade</span><span class="mb-tag">Slack & Moreira</span></div>
+    </div></div>
+
+    <div class="metrics-row" style="grid-template-columns:repeat(4,1fr)">
+      <div class="metric-card">
+        <div class="mc-lbl">Capacidade teórica</div>
+        <div class="mc-val">${Math.round(b.capTeorica).toLocaleString('pt-BR')}</div>
+        <div class="mc-sub">unidades/mês (100% efic.)</div>
+      </div>
+      <div class="metric-card ok">
+        <div class="mc-lbl">Capacidade efetiva</div>
+        <div class="mc-val">${Math.round(b.capEfetiva).toLocaleString('pt-BR')}</div>
+        <div class="mc-sub">unidades/mês (c/ eficiência de ${Math.round(b.efic*100)}%)</div>
+      </div>
+      <div class="metric-card ${utilClass}">
+        <div class="mc-lbl">Taxa de utilização</div>
+        <div class="mc-val">${b.utilizacao.toFixed(1)}%</div>
+        <div class="mc-sub"><span class="${utilBadge}">${utilLabel}</span></div>
+      </div>
+      <div class="metric-card hi">
+        <div class="mc-lbl">${b.folga>=0?'Folga de capacidade':'Déficit de capacidade'}</div>
+        <div class="mc-val">${Math.abs(Math.round(b.folga)).toLocaleString('pt-BR')}</div>
+        <div class="mc-sub">unidades/mês ${b.folga>=0?'disponíveis além da demanda':'abaixo da demanda'}</div>
+      </div>
+    </div>
+
+    <div class="formula-box">
+      <div class="fb-title">Fórmulas</div>
+      <span class="fv">Cap. teórica</span> <span class="fo">=</span> <span class="fo">(</span><span class="fv">Turnos</span> <span class="fo">×</span> <span class="fv">Horas/turno</span> <span class="fo">×</span> <span class="fv">Dias</span> <span class="fo">×</span> <span class="fn">60</span><span class="fo">)</span> <span class="fo">/</span> <span class="fv">Tempo unitário</span>
+      <br><span class="fv">Cap. efetiva</span> <span class="fo">=</span> <span class="fv">Cap. teórica</span> <span class="fo">×</span> <span class="fv">Eficiência</span>
+      <br><span class="fv">Utilização (%)</span> <span class="fo">=</span> <span class="fo">(</span><span class="fv">Demanda</span> <span class="fo">/</span> <span class="fv">Cap. efetiva</span><span class="fo">)</span> <span class="fo">×</span> <span class="fn">100</span>
+      <br><span class="fc">// Capacidade teórica = máximo possível sem perdas; efetiva = real, descontando ineficiências</span>
+    </div>
+
+    <div class="insight-box">
+      <div class="insight-title">💡 Interpretação</div>
+      <div class="insight-text">
+        Com <strong>${b.turnos} turno(s)</strong> de <strong>${b.horas}h</strong> por <strong>${b.dias} dias úteis</strong> e eficiência de <strong>${Math.round(b.efic*100)}%</strong>,
+        a capacidade efetiva é de <strong>${Math.round(b.capEfetiva).toLocaleString('pt-BR')} unidades/mês</strong>.
+        ${b.utilizacao>100
+          ? `A demanda de <strong>${b.demanda.toLocaleString('pt-BR')} un.</strong> <strong>supera</strong> a capacidade em <strong>${Math.abs(Math.round(b.folga)).toLocaleString('pt-BR')} unidades</strong>. É necessário ampliar capacidade (mais turnos, horas extras ou novos equipamentos).`
+          : b.utilizacao>90
+          ? `A taxa de utilização de <strong>${b.utilizacao.toFixed(1)}%</strong> está elevada. Há margem estreita para absorver variações de demanda ou paradas inesperadas.`
+          : `A taxa de utilização de <strong>${b.utilizacao.toFixed(1)}%</strong> indica que o sistema tem folga suficiente para absorver variações de demanda e paradas programadas.`}
+      </div>
+    </div>
+
+    <div class="table-card">
+      <div class="tc-header"><div class="tc-title">Demonstrativo do cálculo</div></div>
+      <table>
+        <thead><tr><th>Parâmetro</th><th>Valor</th><th>Unidade</th></tr></thead>
+        <tbody>
+          <tr><td>Turnos por dia</td><td class="td-mono">${b.turnos}</td><td>turnos</td></tr>
+          <tr><td>Horas por turno</td><td class="td-mono">${b.horas}</td><td>h/turno</td></tr>
+          <tr><td>Dias úteis no mês</td><td class="td-mono">${b.dias}</td><td>dias</td></tr>
+          <tr><td>Minutos disponíveis/mês</td><td class="td-mono">${b.minDisp.toLocaleString('pt-BR')}</td><td>min/mês</td></tr>
+          <tr><td>Tempo unitário de produção</td><td class="td-mono">${b.tempo}</td><td>min/un.</td></tr>
+          <tr><td>Capacidade teórica</td><td class="td-mono">${Math.round(b.capTeorica).toLocaleString('pt-BR')}</td><td>un./mês</td></tr>
+          <tr><td>Eficiência operacional</td><td class="td-mono">${Math.round(b.efic*100)}%</td><td>—</td></tr>
+          <tr><td class="td-bold">Capacidade efetiva</td><td class="td-mono td-bold td-ok">${Math.round(b.capEfetiva).toLocaleString('pt-BR')}</td><td>un./mês</td></tr>
+          <tr><td>Demanda a atender</td><td class="td-mono">${b.demanda.toLocaleString('pt-BR')}</td><td>un./mês</td></tr>
+          <tr><td class="td-bold">Taxa de utilização</td><td class="td-mono td-bold ${b.utilizacao>100?'td-bad':b.utilizacao>90?'td-warn':'td-ok'}">${b.utilizacao.toFixed(1)}%</td><td>—</td></tr>
+          <tr><td class="td-bold">${b.folga>=0?'Folga':'Déficit'} de capacidade</td><td class="td-mono td-bold ${b.folga>=0?'td-ok':'td-bad'}">${Math.abs(Math.round(b.folga)).toLocaleString('pt-BR')}</td><td>un./mês</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// 2. GARGALO
+function renderGargalo(){
+  const b = calcBase();
+  const pd = PRODUCT_DATA[STATE.product];
+  const recursos = pd.recursos.map(r=>{
+    const capR = (b.turnos * b.horas * 60 * b.dias * b.efic) / r.takt;
+    const util  = (b.demanda / capR) * 100;
+    return {...r, capR: Math.round(capR), util: util};
+  });
+  const gargalo = recursos.reduce((a,c)=>c.util>a.util?c:a);
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">🔴</div><div>
+      <div class="mb-title">Análise de Gargalos</div>
+      <div class="mb-desc">O gargalo é o recurso com menor capacidade efetiva — ele limita a capacidade de todo o sistema produtivo. A taxa de produção do sistema nunca pode superar a taxa do gargalo (Teoria das Restrições — TOC).</div>
+      <div class="mb-tags"><span class="mb-tag">Teoria das Restrições (TOC)</span><span class="mb-tag">Goldratt & Cox</span><span class="mb-tag">Slack & Moreira</span></div>
+    </div></div>
+
+    <div class="metrics-row" style="grid-template-columns:repeat(3,1fr)">
+      <div class="metric-card bad">
+        <div class="mc-lbl">Recurso gargalo</div>
+        <div class="mc-val" style="font-size:16px">${gargalo.nome}</div>
+        <div class="mc-sub">Limita todo o sistema</div>
+      </div>
+      <div class="metric-card bad">
+        <div class="mc-lbl">Utilização do gargalo</div>
+        <div class="mc-val">${gargalo.util.toFixed(1)}%</div>
+        <div class="mc-sub">Takt do gargalo: ${gargalo.takt} min/un.</div>
+      </div>
+      <div class="metric-card ok">
+        <div class="mc-lbl">Capacidade do sistema</div>
+        <div class="mc-val">${gargalo.capR.toLocaleString('pt-BR')}</div>
+        <div class="mc-sub">un./mês (limitada pelo gargalo)</div>
+      </div>
+    </div>
+
+    <div class="formula-box">
+      <div class="fb-title">Conceito-chave</div>
+      <span class="fv">Cap. sistema</span> <span class="fo">=</span> <span class="fv">Cap. do gargalo</span>
+      <br><span class="fc">// O gargalo é o elo mais fraco da cadeia: a produção só pode fluir na velocidade do recurso mais lento</span>
+      <br><span class="fv">Takt time</span> <span class="fo">=</span> <span class="fv">Tempo disponível</span> <span class="fo">/</span> <span class="fv">Demanda</span>
+      <br><span class="fc">// Takt time: ritmo necessário de produção para atender a demanda exatamente</span>
+    </div>
+
+    <div class="insight-box">
+      <div class="insight-title">💡 O que fazer com o gargalo?</div>
+      <div class="insight-text">
+        O gargalo do sistema é a <strong>${gargalo.nome}</strong>, com taxa de utilização de <strong>${gargalo.util.toFixed(1)}%</strong>.
+        Segundo a Teoria das Restrições (Goldratt & Cox), o gerente deve: (1) identificar o gargalo; (2) explorar ao máximo sua capacidade, eliminando tempos ociosos; (3) subordinar todos os outros recursos ao ritmo do gargalo; (4) elevar a capacidade do gargalo se ainda necessário; (5) voltar ao passo 1 — porque ao resolver um gargalo, outro emergerá.
+      </div>
+    </div>
+
+    <div class="gargalo-bar">
+      <div style="font-weight:700;font-size:12px;margin-bottom:12px">Taxa de utilização por recurso</div>
+      ${recursos.map(r=>{
+        const isGarg = r.nome===gargalo.nome;
+        const col = r.util>100?'#bf4020':r.util>90?'#b8860b':'#1a7a5e';
+        const badge = r.util>100?'badge-bad':r.util>90?'badge-warn':'badge-ok';
+        const label = r.util>100?'Gargalo crítico':r.util>90?'Atenção':'OK';
+        return `<div class="gb-row">
+          <div class="gb-name">${r.nome}${isGarg?' 🔴':''}</div>
+          <div class="gb-bar-bg">
+            <div class="gb-bar-fill" style="width:${Math.min(r.util,100)}%;background:${col}">
+              <span class="gb-bar-text">${r.util.toFixed(0)}%</span>
+            </div>
+          </div>
+          <div class="gb-pct" style="color:${col}">${r.util.toFixed(1)}%</div>
+          <span class="gb-badge ${badge}">${label}</span>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="table-card">
+      <div class="tc-header"><div class="tc-title">Capacidade efetiva por recurso</div></div>
+      <table>
+        <thead><tr><th>Recurso</th><th>Takt (min/un.)</th><th>Cap. efetiva (un./mês)</th><th>Utilização (%)</th><th>Status</th></tr></thead>
+        <tbody>${recursos.map(r=>`<tr${r.nome===gargalo.nome?' style="background:var(--cream)"':''}>
+          <td class="td-bold">${r.nome}${r.nome===gargalo.nome?' 🔴':''}</td>
+          <td class="td-mono">${r.takt}</td>
+          <td class="td-mono">${r.capR.toLocaleString('pt-BR')}</td>
+          <td class="td-mono ${r.util>100?'td-bad':r.util>90?'td-warn':'td-ok'}">${r.util.toFixed(1)}%</td>
+          <td><span class="${r.util>100?'badge-bad':r.util>90?'badge-warn':'badge-ok'}">${r.util>100?'Gargalo':r.util>90?'Atenção':'OK'}</span></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+// 3. ESTRATÉGIAS DE EXPANSÃO
+function renderEstrategia(){
+  const b = calcBase();
+  const pd = PRODUCT_DATA[STATE.product];
+  const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const demanda = pd.crescimento;
+  const capAtual = Math.round(b.capEfetiva);
+
+  // Lead: expande antes (+20% preventivo)
+  const capLead  = demanda.map(d=>Math.max(capAtual, Math.round(d*1.2)));
+  // Lag: expande só quando supera
+  const capLag   = demanda.map(d=>d>capAtual?Math.round(d):capAtual);
+  // Match: expande em passos menores (~10%)
+  let capMatch=[capAtual]; for(let i=1;i<12;i++) capMatch.push(Math.max(capMatch[i-1],Math.round(demanda[i]*1.05)));
+
+  const stratData = {
+    lead:  {cap:capLead,  nome:'Antecipação (Lead)',          cor:'#1d4e8f'},
+    lag:   {cap:capLag,   nome:'Acompanhamento (Lag)',         cor:'#bf4020'},
+    match: {cap:capMatch, nome:'Acompanhamento gradual (Match)',cor:'#1a7a5e'},
+  };
+  const chosen = stratData[STATE.strategy];
+
+  // custo de ociosidade e déficit
+  const ociosidade = chosen.cap.reduce((s,c,i)=>s+Math.max(0,c-demanda[i]),0);
+  const deficit    = chosen.cap.reduce((s,c,i)=>s+Math.max(0,demanda[i]-c),0);
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">📊</div><div>
+      <div class="mb-title">Estratégias de Expansão da Capacidade</div>
+      <div class="mb-desc">As três estratégias diferem no momento em que a capacidade é ampliada em relação ao crescimento da demanda. Cada uma gera um perfil diferente de ociosidade e risco de falta.</div>
+      <div class="mb-tags"><span class="mb-tag">Estratégia atual: ${chosen.nome}</span><span class="mb-tag">Slack & Moreira</span></div>
+    </div></div>
+
+    <div class="strat-compare">
+      ${Object.entries(stratData).map(([k,s])=>{
+        const oc=s.cap.reduce((t,c,i)=>t+Math.max(0,c-demanda[i]),0);
+        const def=s.cap.reduce((t,c,i)=>t+Math.max(0,demanda[i]-c),0);
+        return `<div class="strat-card-result${k===STATE.strategy?' active':''}">
+          <div class="scr-icon">${{lead:'🚀',lag:'🐢',match:'⚖️'}[k]}</div>
+          <div class="scr-name">${s.nome}</div>
+          <div class="scr-metric"><div class="scr-metric-lbl">Ociosidade acum.</div><div class="scr-metric-val">${oc.toLocaleString('pt-BR')} un.</div></div>
+          <div class="scr-metric"><div class="scr-metric-lbl">Déficit acum.</div><div class="scr-metric-val">${def.toLocaleString('pt-BR')} un.</div></div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <div class="insight-box">
+      <div class="insight-title">💡 Análise da estratégia escolhida: ${chosen.nome}</div>
+      <div class="insight-text">
+        ${STATE.strategy==='lead'?`A estratégia de <strong>antecipação</strong> garante capacidade antes do crescimento da demanda, eliminando o risco de perda de vendas. O preço é a ociosidade acumulada de <strong>${ociosidade.toLocaleString('pt-BR')} unidades</strong> nos períodos em que a capacidade supera a demanda. É recomendada quando o custo de perda de vendas é alto ou quando ampliar capacidade demora muito tempo.`
+        :STATE.strategy==='lag'?`A estratégia de <strong>acompanhamento</strong> só amplia capacidade após a demanda se consolidar, minimizando ociosidade. O risco é o déficit acumulado de <strong>${deficit.toLocaleString('pt-BR')} unidades</strong> — pedidos não atendidos ou atendidos com atraso. É recomendada em mercados incertos ou quando o custo de excesso de capacidade é alto.`
+        :`A estratégia de <strong>acompanhamento gradual (match)</strong> busca manter a capacidade próxima à demanda com expansões menores e frequentes. Gera ociosidade de <strong>${ociosidade.toLocaleString('pt-BR')} unidades</strong> e déficit de <strong>${deficit.toLocaleString('pt-BR')} unidades</strong> — equilibrando os riscos das duas estratégias anteriores. É a mais indicada em mercados com crescimento previsível e moderado.`}
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="cc-title">Capacidade × Demanda ao longo do ano</div>
+      <div class="cc-sub">Linha preta = demanda prevista · Linhas coloridas = capacidade disponível por estratégia</div>
+      <canvas id="mainChart"></canvas>
+    </div>
+
+    <div class="table-card">
+      <div class="tc-header"><div class="tc-title">Estratégia selecionada: ${chosen.nome} — detalhe mensal</div></div>
+      <table>
+        <thead><tr><th>Mês</th><th>Demanda (un.)</th><th>Capacidade (un.)</th><th>Saldo (un.)</th><th>Situação</th></tr></thead>
+        <tbody>${meses.map((m,i)=>{
+          const saldo=chosen.cap[i]-demanda[i];
+          return `<tr><td class="td-bold">${m}</td><td class="td-mono">${demanda[i].toLocaleString('pt-BR')}</td><td class="td-mono">${chosen.cap[i].toLocaleString('pt-BR')}</td>
+            <td class="td-mono ${saldo>=0?'td-ok':'td-bad'}">${saldo>=0?'+':''}${saldo.toLocaleString('pt-BR')}</td>
+            <td><span class="${saldo>=0?'badge-ok':'badge-bad'}">${saldo>=0?'Capacidade OK':'Déficit'}</span></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  chartInst = new Chart(ctx,{
+    type:'line',
+    data:{
+      labels:meses,
+      datasets:[
+        {label:'Demanda prevista', data:demanda, borderColor:'#12100e', borderWidth:2.5, pointRadius:3, tension:.3, fill:false},
+        ...Object.entries(stratData).map(([k,s])=>({
+          label:s.nome, data:s.cap, borderColor:s.cor,
+          borderWidth:k===STATE.strategy?2.5:1.5,
+          borderDash:k===STATE.strategy?[]:[5,3],
+          pointRadius:k===STATE.strategy?4:2,
+          tension:.3, fill:false
+        }))
+      ]
+    },
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'top',labels:{font:{family:'DM Mono',size:10},boxWidth:10}},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${Math.round(c.raw).toLocaleString('pt-BR')} un.`}}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10}}},
+        y:{grid:{color:'#e2dcd0'},ticks:{font:{family:'DM Mono',size:9},callback:v=>v.toLocaleString('pt-BR')}}
+      }
+    }
+  });
+}
+
+// 4. TAXA DE UTILIZAÇÃO
+function renderUtilizacao(){
+  const b = calcBase();
+  const pd = PRODUCT_DATA[STATE.product];
+  const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  const utils = pd.crescimento.map(d=>(d/b.capEfetiva)*100);
+  const maxUtil = Math.max(...utils);
+  const minUtil = Math.min(...utils);
+  const mesMax  = meses[utils.indexOf(maxUtil)];
+  const mesMin  = meses[utils.indexOf(minUtil)];
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">📈</div><div>
+      <div class="mb-title">Taxa de Utilização da Capacidade</div>
+      <div class="mb-desc">A taxa de utilização mede o quanto da capacidade disponível está sendo efetivamente usada. Valores muito altos indicam risco de sobrecarga; valores baixos indicam ociosidade e custo de capacidade não aproveitada.</div>
+      <div class="mb-tags"><span class="mb-tag">Capacidade efetiva: ${Math.round(b.capEfetiva).toLocaleString('pt-BR')} un./mês</span></div>
+    </div></div>
+
+    <div class="metrics-row" style="grid-template-columns:repeat(4,1fr)">
+      <div class="metric-card ${maxUtil>100?'bad':maxUtil>90?'warn':'ok'}">
+        <div class="mc-lbl">Utilização máxima</div>
+        <div class="mc-val">${maxUtil.toFixed(1)}%</div>
+        <div class="mc-sub">Em ${mesMax}</div>
+      </div>
+      <div class="metric-card ok">
+        <div class="mc-lbl">Utilização mínima</div>
+        <div class="mc-val">${minUtil.toFixed(1)}%</div>
+        <div class="mc-sub">Em ${mesMin}</div>
+      </div>
+      <div class="metric-card">
+        <div class="mc-lbl">Utilização média</div>
+        <div class="mc-val">${(utils.reduce((a,b)=>a+b)/12).toFixed(1)}%</div>
+        <div class="mc-sub">média anual</div>
+      </div>
+      <div class="metric-card ${maxUtil>100?'bad':'ok'}">
+        <div class="mc-lbl">Meses em déficit</div>
+        <div class="mc-val">${utils.filter(u=>u>100).length}</div>
+        <div class="mc-sub">de 12 meses</div>
+      </div>
+    </div>
+
+    <div class="insight-box">
+      <div class="insight-title">💡 Interpretação da utilização</div>
+      <div class="insight-text">
+        ${maxUtil>100
+          ? `Em <strong>${mesMax}</strong>, a demanda supera a capacidade disponível (${maxUtil.toFixed(1)}%). Nesse período, será necessário recorrer a horas extras, terceirização ou antecipação de produção para estoques.`
+          : maxUtil>90
+          ? `A utilização máxima de <strong>${maxUtil.toFixed(1)}%</strong> (em ${mesMax}) está próxima do limite operacional. Pequenas variações de demanda ou eficiência podem gerar sobrecarga.`
+          : `A utilização máxima de <strong>${maxUtil.toFixed(1)}%</strong> (em ${mesMax}) indica que o sistema tem folga suficiente para absorver variações ao longo do ano.`}
+        <br>A utilização mínima de <strong>${minUtil.toFixed(1)}%</strong> (em ${mesMin}) indica o período de maior ociosidade, quando os custos fixos pesam mais sobre o custo unitário.
+        Manter a utilização entre <strong>75% e 90%</strong> é geralmente considerado o intervalo ideal, equilibrando eficiência e flexibilidade (SLACK; BRANDON-JONES; JOHNSTON, 2018).
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="cc-title">Taxa de utilização ao longo do ano (%)</div>
+      <div class="cc-sub">Linha vermelha tracejada = 100% (limite da capacidade efetiva)</div>
+      <canvas id="mainChart"></canvas>
+    </div>
+  </div>`;
+
+  const ctx = document.getElementById('mainChart').getContext('2d');
+  chartInst = new Chart(ctx,{
+    type:'bar',
+    data:{
+      labels:meses,
+      datasets:[
+        {label:'Taxa de utilização (%)',data:utils,
+          backgroundColor:utils.map(u=>u>100?'rgba(191,64,32,.8)':u>90?'rgba(184,134,11,.8)':'rgba(26,122,94,.8)'),
+          borderRadius:5, borderSkipped:false},
+        {label:'Limite (100%)',data:Array(12).fill(100),type:'line',borderColor:'#bf4020',borderWidth:1.5,borderDash:[6,3],pointRadius:0,fill:false}
+      ]
+    },
+    options:{responsive:true,
+      plugins:{legend:{position:'top',labels:{font:{family:'DM Mono',size:10}}},
+        tooltip:{callbacks:{label:c=>`${c.dataset.label}: ${typeof c.raw==='number'?c.raw.toFixed(1)+'%':c.raw}`}}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:10}}},
+        y:{min:0,max:Math.max(120,Math.ceil(maxUtil/10)*10+10),
+          grid:{color:'#e2dcd0'},ticks:{font:{family:'DM Mono',size:9},callback:v=>v+'%'}}
+      }
+    }
+  });
+}
+
+// ── INIT ──
+initJourneyBar();
+// auto-skip step1 (produto vem da capa via URL)
+window.addEventListener('load',()=>{
+  if(URL_PRODUTO && PRODUCT_DATA[URL_PRODUTO]){
+    STATE.product = URL_PRODUTO;
+  }
+  goStep(2);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1459 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APO Lab · Previsão de demanda</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --ink: #12100e;
+  --paper: #f7f4ee;
+  --cream: #ede9df;
+  --warm: #e2dcd0;
+  --red: #bf4020;
+  --blue: #0a325c;
+  --green: #4ca456;
+  --gold: #b8860b;
+  --purple: #6b3fa0;
+  --muted: #756e62;
+  --border: #cec8bc;
+  --white: #ffffff;
+  --shadow-sm: 0 1px 4px rgba(18,16,14,.07);
+  --shadow: 0 3px 14px rgba(18,16,14,.10);
+  --shadow-lg: 0 8px 32px rgba(18,16,14,.14);
+  --r: 10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.6}
+
+/* ── TOPBAR ── */
+.topbar{
+  background:#0a325c;color:#fff;
+  padding:0;
+  position:fixed;top:0;left:0;right:0;z-index:200;
+  border-bottom:3px solid #4ca456;
+}
+.topbar-inner{
+  padding:14px 28px;display:flex;align-items:center;justify-content:space-between;
+}
+.topbar-left{display:flex;align-items:center;gap:18px}
+.topbar-logo{height:48px;width:auto;filter:brightness(0) invert(1) drop-shadow(0 0 2px rgba(255,255,255,.6));opacity:1;flex-shrink:0}
+.topbar-logo-fallback{display:none;font-family:'Fraunces',serif;font-size:18px;font-weight:900;color:white;letter-spacing:-.5px;line-height:1}
+.topbar-divider{width:1px;height:40px;background:rgba(255,255,255,.2);flex-shrink:0}
+.topbar-title{font-family:'Fraunces',serif;font-size:20px;font-weight:900;letter-spacing:-.3px;line-height:1.2}
+.topbar-sub{font-size:11px;color:#bbb;letter-spacing:.6px;margin-top:3px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.inst-bar{
+  background:#062848;border-top:1px solid rgba(255,255,255,.1);
+  padding:5px 28px;display:flex;align-items:center;gap:6px;
+  font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.3px;
+}
+.inst-sep{color:#555;margin:0 3px}
+.btn-restart{
+  font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;
+  padding:5px 12px;border-radius:20px;border:1.5px solid #555;
+  background:transparent;color:#ccc;cursor:pointer;letter-spacing:.3px;
+  transition:all .2s;
+}
+.btn-restart:hover{border-color:#aaa;color:white}
+.progress-track{display:flex;align-items:center;gap:4px}
+.progress-step{
+  width:28px;height:4px;border-radius:2px;
+  background:#333;transition:background .4s;
+}
+.progress-step.done{background:var(--red)}
+.progress-step.active{background:#888}
+
+/* ── BARRA DE JORNADA (vinda do APO Lab) ── */
+.journey-bar{
+  position:fixed;top:96px;left:0;right:0;z-index:190;
+  background:#0d1f35;border-bottom:2px solid #4ca456;
+  padding:0 20px;display:none;
+  align-items:center;justify-content:space-between;gap:12px;height:56px;
+}
+.jb-left{display:flex;align-items:center;gap:10px;min-width:0}
+.jb-back{
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
+  padding:5px 13px;border-radius:20px;border:1.5px solid rgba(255,255,255,.25);
+  background:transparent;color:rgba(255,255,255,.75);cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;
+}
+.jb-back:hover{border-color:rgba(255,255,255,.7);color:white}
+.jb-steps{display:flex;align-items:center;overflow-x:auto;scrollbar-width:none}
+.jb-steps::-webkit-scrollbar{display:none}
+.jb-step{
+  display:flex;align-items:center;gap:4px;
+  padding:5px 12px;font-size:13px;font-weight:500;color:rgba(255,255,255,.8);
+  white-space:nowrap;flex-shrink:0;border-right:1px solid rgba(255,255,255,.08);
+}
+.jb-step:last-child{border-right:none}
+.jb-step.current{color:#fff;background:#0a325c;border-radius:20px;border:2px solid #4ca456;font-weight:700}
+.jb-step.clickable{cursor:pointer;}
+.jb-step.clickable:hover{background:rgba(255,255,255,0.12);}
+.jb-step.done{color:rgba(255,255,255,.8)}
+.jb-step-icon{font-size:13px}
+.jb-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.jb-product{
+  font-size:12px;font-weight:700;color:#fff;
+  background:#4ca456;padding:4px 13px;
+  border-radius:20px;border:none;white-space:nowrap;
+}
+.jb-next{
+  font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;
+  padding:5px 14px;border-radius:20px;border:none;
+  background:#1a2a1a;color:#4a9;cursor:default;opacity:.5;white-space:nowrap;
+}
+
+/* ── WRAPPER ── */
+.app{padding-top:96px;min-height:100vh}
+.app.has-journey{padding-top:152px}
+body.has-journey #onboarding{top:152px}
+
+/* ══════════════════════════════════
+   ONBOARDING OVERLAY
+══════════════════════════════════ */
+#onboarding{
+  position:fixed;inset:0;top:96px;
+  background:var(--paper);z-index:100;
+  display:flex;align-items:flex-start;justify-content:center;
+  overflow-y:auto;padding:40px 20px 60px;
+}
+.ob-card{
+  width:100%;max-width:760px;
+  animation:slideUp .45s cubic-bezier(.22,1,.36,1) both;
+}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+
+/* step header */
+.ob-step-label{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:10px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px;
+}
+.ob-step-num{
+  width:22px;height:22px;border-radius:50%;
+  background:var(--red);color:white;
+  font-size:10px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+}
+.ob-title{font-family:'Fraunces',serif;font-size:32px;font-weight:900;line-height:1.15;margin-bottom:8px}
+.ob-subtitle{font-size:14px;color:var(--muted);margin-bottom:32px;line-height:1.5;max-width:540px}
+
+/* tip box */
+.ob-tip{
+  background:var(--cream);border:1px solid var(--border);
+  border-left:3px solid var(--gold);
+  border-radius:8px;padding:12px 16px;
+  font-size:12px;color:var(--muted);line-height:1.6;
+  margin-bottom:28px;
+}
+.ob-tip strong{color:var(--ink)}
+
+/* STEP 1 – produto */
+.product-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px}
+@media(min-width:600px){.product-grid{grid-template-columns:repeat(2,1fr)}}
+.product-card{
+  background:var(--white);border:2px solid var(--border);border-radius:var(--r);
+  padding:18px 16px;cursor:pointer;transition:all .2s;
+  display:flex;flex-direction:column;gap:8px;
+  position:relative;overflow:hidden;
+}
+.product-card:hover{border-color:var(--red);transform:translateY(-2px);box-shadow:var(--shadow)}
+.product-card.selected{border-color:var(--red);background:#fdf6f3}
+.product-card.selected::after{
+  content:'✓';position:absolute;top:10px;right:12px;
+  font-size:13px;font-weight:700;color:var(--red);
+}
+.pc-icon{font-size:28px;line-height:1}
+.pc-name{font-weight:700;font-size:14px}
+.pc-sector{font-size:11px;color:var(--muted);letter-spacing:.3px}
+.pc-tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.pc-tag{
+  font-size:9px;font-weight:600;letter-spacing:.5px;text-transform:uppercase;
+  padding:2px 7px;border-radius:4px;
+}
+.tag-saz{background:#dbeafe;color:#1e40af}
+.tag-est{background:#d1fae5;color:#065f46}
+.tag-cre{background:#fef3c7;color:#92400e}
+.tag-new{background:#fce7f3;color:#9d174d}
+.tag-mad{background:#ede9fe;color:#5b21b6}
+
+/* STEP 2 – ciclo de vida */
+.lifecycle-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:28px}
+.lc-card{
+  background:var(--white);border:2px solid var(--border);border-radius:var(--r);
+  padding:20px 18px;cursor:pointer;transition:all .2s;
+}
+.lc-card:hover{border-color:var(--blue);transform:translateY(-2px);box-shadow:var(--shadow)}
+.lc-card.selected{border-color:var(--blue);background:#f0f4fb}
+.lc-card.selected::after{
+  content:'✓';position:absolute;top:10px;right:12px;
+  font-size:13px;font-weight:700;color:var(--blue);
+}
+.lc-card{position:relative}
+.lc-phase{font-size:11px;font-weight:600;color:var(--blue);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.lc-name{font-weight:700;font-size:15px;margin-bottom:4px}
+.lc-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.lc-curve{margin-top:10px;height:36px;width:100%}
+
+/* STEP 3 – horizonte e contexto */
+.context-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:28px}
+.ctx-group{display:flex;flex-direction:column;gap:6px}
+.ctx-label{font-size:11px;font-weight:600;color:var(--muted);letter-spacing:.4px;text-transform:uppercase}
+.ctx-select{
+  width:100%;padding:10px 12px;
+  border:1.5px solid var(--border);border-radius:8px;
+  background:white;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--ink);
+  outline:none;cursor:pointer;transition:border-color .2s;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23756e62' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
+}
+.ctx-select:focus{border-color:var(--red)}
+.ctx-radio-group{display:flex;gap:8px;flex-wrap:wrap}
+.ctx-radio{
+  padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);
+  background:white;font-size:12px;font-weight:500;cursor:pointer;
+  transition:all .15s;color:var(--muted);
+}
+.ctx-radio.sel{background:var(--ink);color:white;border-color:var(--ink)}
+.ctx-radio:hover:not(.sel){border-color:var(--ink);color:var(--ink)}
+
+/* STEP 4 – sugestão de método */
+.method-suggestion-grid{display:grid;gap:12px;margin-bottom:28px}
+.ms-card{
+  background:var(--white);border:2px solid var(--border);border-radius:var(--r);
+  padding:18px 20px;cursor:pointer;transition:all .2s;
+  display:grid;grid-template-columns:auto 1fr auto;align-items:start;gap:14px;
+}
+.ms-card:hover{border-color:var(--green);transform:translateY(-1px);box-shadow:var(--shadow)}
+.ms-card.selected{border-color:var(--green);background:#f0faf6}
+.ms-card.recommended{border-color:var(--green)}
+.ms-icon{font-size:26px}
+.ms-name{font-weight:700;font-size:14px;margin-bottom:3px}
+.ms-why{font-size:12px;color:var(--muted);line-height:1.5}
+.ms-badge{
+  font-size:9px;font-weight:700;letter-spacing:.8px;text-transform:uppercase;
+  padding:3px 9px;border-radius:20px;white-space:nowrap;align-self:start;
+}
+.badge-rec{background:#d1fae5;color:#065f46}
+.badge-ok{background:var(--cream);color:var(--muted)}
+.ms-check{width:20px;height:20px;border-radius:50%;border:2px solid var(--border);flex-shrink:0;transition:all .2s;margin-top:2px}
+.ms-card.selected .ms-check{background:var(--green);border-color:var(--green);display:flex;align-items:center;justify-content:center}
+.ms-card.selected .ms-check::after{content:'✓';color:white;font-size:11px;font-weight:700}
+
+/* NAV BUTTONS */
+.ob-nav{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.btn-back{
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;
+  padding:10px 20px;border-radius:8px;border:1.5px solid var(--border);
+  background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;
+}
+.btn-back:hover{border-color:var(--ink);color:var(--ink)}
+.btn-next{
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
+  padding:11px 28px;border-radius:8px;border:none;
+  background:var(--red);color:white;cursor:pointer;
+  transition:all .2s;letter-spacing:.3px;
+  display:flex;align-items:center;gap:8px;
+}
+.btn-next:hover{background:#a83618;transform:translateY(-1px);box-shadow:var(--shadow)}
+.btn-next:disabled{background:#ccc;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-launch{
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;
+  padding:13px 32px;border-radius:8px;border:none;
+  background:var(--ink);color:white;cursor:pointer;
+  transition:all .2s;letter-spacing:.3px;
+  display:flex;align-items:center;gap:10px;
+}
+.btn-launch:hover{background:#2a2520;transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+
+/* summary card (step 4) */
+.summary-bar{
+  background:var(--ink);color:var(--paper);
+  border-radius:8px;padding:14px 18px;
+  display:flex;gap:20px;flex-wrap:wrap;margin-bottom:20px;
+}
+.sum-item{display:flex;flex-direction:column;gap:2px}
+.sum-lbl{font-size:9px;letter-spacing:1.2px;text-transform:uppercase;color:#888}
+.sum-val{font-size:13px;font-weight:600}
+
+/* ══════════════════════════════════
+   DASHBOARD (pós-onboarding)
+══════════════════════════════════ */
+#dashboard{display:none}
+.dash-layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100vh - 96px)}
+
+/* SIDEBAR */
+.dash-sidebar{
+  background:var(--cream);border-right:1px solid var(--border);
+  padding:20px 16px;overflow-y:auto;overflow-x:visible;
+  max-height:calc(100vh - 96px);position:sticky;top:96px;
+}
+.sb-section{margin-bottom:20px}
+.sb-lbl{
+  font-size:9px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border);
+}
+
+/* context pill */
+.ctx-pill{
+  background:var(--white);border:1px solid var(--border);
+  border-radius:8px;padding:10px 12px;margin-bottom:10px;
+  font-size:12px;line-height:1.6;
+}
+.ctx-pill-row{display:flex;justify-content:space-between;align-items:baseline}
+.ctx-pill-key{font-size:10px;color:var(--muted);font-weight:600}
+.ctx-pill-val{font-weight:600;font-size:12px}
+
+/* method tabs */
+.method-tabs{display:flex;flex-direction:column;gap:5px}
+.m-tab{
+  display:flex;align-items:center;gap:9px;
+  padding:9px 11px;border-radius:7px;cursor:pointer;
+  border:1.5px solid transparent;background:transparent;
+  font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);
+  transition:all .2s;text-align:left;
+}
+.m-tab:hover{background:rgba(191,64,32,.06)}
+.m-tab.active{background:var(--ink);color:white;border-color:var(--ink)}
+.m-tab .t-icon{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.m-tab.active .t-icon{background:rgba(255,255,255,.12)}
+.m-tab:not(.active) .t-icon{background:rgba(18,16,14,.07)}
+.t-info{flex:1}
+.t-name{font-weight:600;font-size:11px}
+.t-kind{font-size:10px;color:var(--muted);margin-top:1px}
+.m-tab.active .t-kind{color:rgba(255,255,255,.55)}
+.m-tab.rec-tab::before{
+  content:'★';color:var(--gold);font-size:10px;position:absolute;right:8px;top:7px;
+}
+.m-tab{position:relative}
+
+.btn-run{
+  width:100%;margin-top:6px;padding:11px;
+  background:var(--red);color:white;border:none;border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
+  cursor:pointer;letter-spacing:.3px;transition:all .2s;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+}
+.btn-run:hover{background:#a83618;transform:translateY(-1px);box-shadow:var(--shadow)}
+
+/* param controls */
+.ctrl-group{margin-bottom:12px}
+.ctrl-lbl{display:block;font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px;letter-spacing:.3px}
+.ctrl-range-row{display:flex;align-items:center;gap:8px}
+.ctrl-range{width:100%;accent-color:var(--red)}
+.ctrl-val{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--red);min-width:34px;text-align:right}
+select.ctrl-select{
+  width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;
+  background:white;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);
+  outline:none;transition:border-color .2s;
+}
+select.ctrl-select:focus{border-color:var(--red)}
+
+/* ── TOOLTIPS ── */
+.tip-wrap{position:relative;display:inline-flex;align-items:center}
+.tip-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:15px;height:15px;border-radius:50%;
+  background:var(--border);color:var(--muted);
+  font-size:9px;font-weight:700;cursor:help;
+  flex-shrink:0;margin-left:5px;
+  transition:background .15s;
+  font-style:normal;
+}
+.tip-wrap:hover .tip-icon{background:var(--blue);color:white}
+.tip-balloon{
+  position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);
+  width:230px;
+  background:var(--ink);color:var(--paper);
+  border-radius:8px;padding:10px 13px;
+  font-size:11px;line-height:1.6;font-weight:400;
+  box-shadow:var(--shadow-lg);
+  pointer-events:none;
+  opacity:0;transition:opacity .18s,transform .18s;
+  z-index:999;
+  font-family:'DM Sans',sans-serif;
+}
+.tip-balloon::before{
+  content:'';position:absolute;right:100%;top:50%;transform:translateY(-50%);
+  border:6px solid transparent;border-right-color:var(--ink);
+}
+.tip-balloon strong{color:#fbbf24;font-weight:600}
+.tip-balloon em{color:#94a3b8;font-style:normal}
+.tip-wrap:hover .tip-balloon{opacity:1;transform:translateY(-50%) translateX(2px)}
+
+/* versão para tabs (balão à direita da sidebar, sobre o conteúdo) */
+.m-tab .tip-balloon{
+  left:calc(100% + 14px);top:50%;transform:translateY(-50%);
+  width:240px;
+}
+.m-tab:hover .tip-balloon{opacity:1;transform:translateY(-50%) translateX(2px)}
+
+/* versão para labels de parâmetro (balão alinhado) */
+.ctrl-lbl-row{display:flex;align-items:center;margin-bottom:4px}
+.ctrl-lbl-row .ctrl-lbl{margin-bottom:0}
+
+/* MAIN */
+.dash-main{padding:24px 28px;overflow-y:auto}
+
+.method-banner{
+  background:var(--white);border:1.5px solid var(--border);
+  border-left:4px solid var(--red);border-radius:var(--r);
+  padding:14px 18px;margin-bottom:20px;
+  display:flex;gap:14px;align-items:flex-start;
+}
+.mb-icon{font-size:26px;flex-shrink:0;margin-top:2px}
+.mb-title{font-family:'Fraunces',serif;font-size:17px;font-weight:700;margin-bottom:3px}
+.mb-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.mb-tags{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.mb-tag{font-size:9px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--cream);color:var(--muted);letter-spacing:.4px}
+
+.metrics-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.metric-card{
+  background:var(--white);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:14px;box-shadow:var(--shadow-sm);
+}
+.metric-card.hi{border-color:var(--red)}
+.mc-lbl{font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px}
+.mc-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:500}
+.metric-card.hi .mc-val{color:var(--red)}
+.mc-sub{font-size:10px;color:var(--muted);margin-top:2px}
+
+.badge-good{background:#d1fae5;color:#065f46;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600}
+.badge-warn{background:#fef3c7;color:#92400e;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600}
+.badge-bad{background:#fee2e2;color:#991b1b;padding:2px 7px;border-radius:4px;font-size:9px;font-weight:600}
+
+.formula-box{
+  background:#12100e;color:#e2e8f0;border-radius:var(--r);
+  padding:14px 18px;margin-bottom:18px;
+  font-family:'DM Mono',monospace;font-size:12px;line-height:1.9;
+}
+.fb-title{color:#94a3b8;font-size:9px;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-family:'DM Sans',sans-serif}
+.fv{color:#fbbf24}.fo{color:#818cf8}.fn{color:#34d399}.fc{color:#475569;font-style:italic}
+
+.chart-card{
+  background:var(--white);border:1.5px solid var(--border);
+  border-radius:var(--r);padding:20px;margin-bottom:18px;box-shadow:var(--shadow-sm);
+}
+.cc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.cc-title{font-family:'Fraunces',serif;font-size:15px;font-weight:700}
+.cc-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.cc-legend{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:10px;color:var(--muted)}
+.leg-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+canvas{max-height:300px}
+
+.table-card{
+  background:var(--white);border:1.5px solid var(--border);
+  border-radius:var(--r);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow-sm);
+}
+.tc-header{
+  padding:12px 18px;background:var(--cream);border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center;
+}
+.tc-title{font-weight:600;font-size:12px}
+table{width:100%;border-collapse:collapse}
+thead th{
+  padding:9px 14px;text-align:left;font-size:9px;font-weight:600;
+  letter-spacing:1px;text-transform:uppercase;color:var(--muted);
+  background:var(--cream);border-bottom:1px solid var(--border);
+}
+tbody td{padding:9px 14px;font-size:11px;border-bottom:1px solid var(--border);font-family:'DM Mono',monospace}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--cream)}
+.td-lbl{font-family:'DM Sans',sans-serif;font-weight:500}
+.td-fc{font-weight:600;color:var(--blue)}
+
+/* empty */
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-icon{font-size:44px;margin-bottom:12px}
+
+/* delphi */
+.delphi-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.expert-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:14px}
+.ex-header{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.ex-avatar{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.ex-name{font-weight:600;font-size:12px}
+.ex-role{font-size:10px;color:var(--muted)}
+.round-badge{display:inline-flex;align-items:center;gap:6px;background:var(--cream);border:1px solid var(--border);padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;margin-bottom:10px}
+.r-dot{width:6px;height:6px;border-radius:50%;background:var(--red)}
+.conv-wrap{margin-bottom:8px}
+.conv-lbl{font-size:10px;color:var(--muted);margin-bottom:3px;display:flex;justify-content:space-between}
+.conv-bg{height:7px;background:var(--cream);border-radius:4px;overflow:hidden}
+.conv-bar{height:100%;border-radius:4px;transition:width .6s ease}
+
+/* comp grid */
+.comp-grid{display:grid;grid-template-columns:1.3fr repeat(4,1fr);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:16px}
+.cg-cell{padding:9px 11px;font-size:11px;border-bottom:1px solid var(--border);border-right:1px solid var(--border)}
+.cg-cell:nth-child(5n){border-right:none}
+.cg-cell.hdr{background:var(--ink);color:white;font-weight:600;font-size:9px;letter-spacing:.5px;text-align:center}
+.cg-cell.rl{background:var(--cream);font-weight:600;font-size:11px}
+.cg-cell.last-row{border-bottom:none}
+.dot-g{color:var(--green);font-weight:700}
+.dot-m{color:var(--gold);font-weight:700}
+.dot-r{color:var(--red);font-weight:700}
+
+/* spinner */
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;animation:spin .55s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.fade-in{animation:fadeIn .35s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+@media(max-width:860px){
+  .dash-layout{grid-template-columns:1fr}
+  .metrics-row{grid-template-columns:repeat(2,1fr)}
+  .delphi-grid{grid-template-columns:1fr}
+  .product-grid,.lifecycle-grid{grid-template-columns:1fr}
+}
+
+.home-btn{
+  display:flex;align-items:center;gap:5px;
+  font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;
+  color:rgba(255,255,255,.75);text-decoration:none;
+  padding:5px 12px;border-radius:20px;
+  border:1px solid rgba(255,255,255,.25);
+  transition:background .15s,color .15s;cursor:pointer;background:transparent;
+}
+.home-btn:hover{background:rgba(255,255,255,.12);color:#fff;}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <img class="topbar-logo"
+           src="https://institucional.ufrrj.br/ccs/files/2019/06/rural_logo01.png"
+           alt="Logomarca UFRRJ"
+           onerror="this.style.display='none';document.getElementById('topbar-fallback').style.display='block'">
+      <span id="topbar-fallback" style="display:none;font-family:'Fraunces',serif;font-size:15px;font-weight:900;color:white;letter-spacing:-.3px">UFRRJ</span>
+      <div class="topbar-divider"></div>
+      <div>
+        <div class="topbar-title">APO Lab · Previsão de demanda</div>
+        <div class="topbar-sub">Ambiente simulado de Produção e Operações</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <div class="progress-track" id="progressTrack">
+        <div class="progress-step active" id="ps1">
+    <button class="home-btn" onclick="voltarHome()" title="Voltar ao APO Lab">🏠 Home</button>
+  </div>
+        <div class="progress-step" id="ps2"></div>
+        <div class="progress-step" id="ps3"></div>
+        <div class="progress-step" id="ps4"></div>
+      </div>
+      <button class="btn-restart" onclick="restartOnboarding()">↺ Reiniciar</button>
+    </div>
+  </div>
+  <div class="inst-bar">
+    <span>Universidade Federal Rural do Rio de Janeiro</span>
+    <span class="inst-sep">·</span>
+    <span>Curso de Administração · Campus Nova Iguaçu</span>
+    <span class="inst-sep">·</span>
+    <span>Baseado nas disciplinas da área de Produção e Operações</span>
+  </div>
+</header>
+
+<!-- BARRA DE JORNADA APO LAB -->
+<div class="journey-bar" id="journeyBar">
+  <div class="jb-left">
+    <button class="jb-back" id="jbBack" onclick="voltarApoLab()">← APO Lab</button>
+    <div class="jb-steps" id="jbSteps"></div>
+  </div>
+  <div class="jb-right">
+    <div class="jb-product" id="jbProduct"></div>
+    <div class="jb-next" title="Próximo módulo disponível em breve">Próximo módulo →</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     ONBOARDING
+══════════════════════════════════ -->
+<div id="onboarding">
+<div class="ob-card" id="obCard">
+
+  <!-- ── STEP 1: PRODUTO ── -->
+  <div id="step1">
+    <div class="ob-step-label"><div class="ob-step-num">1</div>Etapa 1 de 4</div>
+    <div class="ob-title">Previsão de Demanda</div>
+    <div class="ob-subtitle">Cada produto tem características diferentes que influenciam diretamente a escolha do método de previsão. O produto já foi selecionado na tela inicial do APO Lab.</div>
+    <div class="ob-tip">
+      <strong>Por que isso importa?</strong> Produtos com demanda sazonal (ex.: sorvete) exigem métodos que captem ciclos.
+      Produtos estáveis (ex.: farinha) funcionam bem com métodos simples. Produtos novos precisam de abordagens especiais.
+    </div>
+    <div class="ob-nav">
+      <span></span>
+      <button class="btn-next" id="btnNext1" onclick="goStep(2)">Próximo →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 2: CICLO DE VIDA ── -->
+  <div id="step2" style="display:none">
+    <div class="ob-step-label"><div class="ob-step-num">2</div>Etapa 2 de 4</div>
+    <div class="ob-title">Em que fase está o produto?</div>
+    <div class="ob-subtitle">O ciclo de vida do produto determina o padrão histórico de demanda e o horizonte de previsão mais adequado.</div>
+    <div class="ob-tip" id="tip2">
+      <strong>Dica:</strong> Esta informação, combinada com o produto escolhido, já elimina métodos inadequados e destaca os mais promissores.
+    </div>
+    <div class="lifecycle-grid" id="lcGrid">
+      <div class="lc-card" onclick="selectLC('lancamento',this)">
+        <div class="lc-phase">Fase 1</div>
+        <div class="lc-name">🚀 Lançamento</div>
+        <div class="lc-desc">Produto recém-lançado ou há menos de 1 ano no mercado. Poucos dados históricos disponíveis.</div>
+        <svg class="lc-curve" viewBox="0 0 120 36" fill="none"><polyline points="0,34 20,30 40,24 70,10 100,4 120,2" stroke="#1d4e8f" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </div>
+      <div class="lc-card" onclick="selectLC('crescimento',this)">
+        <div class="lc-phase">Fase 2</div>
+        <div class="lc-name">📈 Crescimento</div>
+        <div class="lc-desc">Demanda em expansão consistente. Tendência de alta clara com 1–3 anos de histórico.</div>
+        <svg class="lc-curve" viewBox="0 0 120 36" fill="none"><polyline points="0,34 30,26 60,16 90,8 120,3" stroke="#1a7a5e" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </div>
+      <div class="lc-card" onclick="selectLC('maturidade',this)">
+        <div class="lc-phase">Fase 3</div>
+        <div class="lc-name">⚖️ Maturidade</div>
+        <div class="lc-desc">Demanda estável ou levemente oscilante. Histórico longo e padrões bem estabelecidos.</div>
+        <svg class="lc-curve" viewBox="0 0 120 36" fill="none"><polyline points="0,20 20,16 40,18 60,15 80,17 100,16 120,18" stroke="#b8860b" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </div>
+      <div class="lc-card" onclick="selectLC('declinio',this)">
+        <div class="lc-phase">Fase 4</div>
+        <div class="lc-name">📉 Declínio</div>
+        <div class="lc-desc">Demanda em queda. Produto sendo substituído ou saindo do portfólio. Requer atenção especial.</div>
+        <svg class="lc-curve" viewBox="0 0 120 36" fill="none"><polyline points="0,4 30,8 60,16 90,26 120,34" stroke="#bf4020" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </div>
+    </div>
+    <div class="ob-nav">
+      <button class="btn-back" onclick="goStep(1)">← Voltar</button>
+      <button class="btn-next" id="btnNext2" onclick="goStep(3)" disabled>Próximo →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 3: CONTEXTO ── -->
+  <div id="step3" style="display:none">
+    <div class="ob-step-label"><div class="ob-step-num">3</div>Etapa 3 de 4</div>
+    <div class="ob-title">Contexto da previsão</div>
+    <div class="ob-subtitle">Defina o horizonte e as condições do mercado. Essas informações afetam a precisão e a adequação de cada método.</div>
+    <div class="ob-tip" id="tip3">
+      <strong>Horizonte de previsão:</strong> quanto mais longo, maior a incerteza. Métodos simples funcionam melhor no curto prazo; modelos mais sofisticados são necessários para o médio e longo prazo.
+    </div>
+    <div class="context-grid">
+      <div class="ctx-group">
+        <div class="ctx-label">Horizonte de previsão</div>
+        <select class="ctx-select" id="ctx_horizon" onchange="checkStep3()">
+          <option value="">Selecione...</option>
+          <option value="3">Curto prazo (1–3 meses)</option>
+          <option value="6">Médio prazo (4–6 meses)</option>
+          <option value="12">Longo prazo (7–12 meses)</option>
+        </select>
+      </div>
+      <div class="ctx-group">
+        <div class="ctx-label">Frequência dos dados históricos</div>
+        <select class="ctx-select" id="ctx_freq" onchange="checkStep3()">
+          <option value="">Selecione...</option>
+          <option value="mensal">Mensal (dados mensais)</option>
+          <option value="trimestral">Trimestral</option>
+          <option value="semanal">Semanal</option>
+        </select>
+      </div>
+      <div class="ctx-group">
+        <div class="ctx-label">Estabilidade do mercado</div>
+        <div class="ctx-radio-group" id="stability">
+          <div class="ctx-radio" onclick="selectRadio('stability','estavel',this)">Estável</div>
+          <div class="ctx-radio" onclick="selectRadio('stability','moderado',this)">Moderado</div>
+          <div class="ctx-radio" onclick="selectRadio('stability','volatil',this)">Volátil</div>
+        </div>
+      </div>
+      <div class="ctx-group">
+        <div class="ctx-label">Disponibilidade de variáveis causais</div>
+        <div class="ctx-radio-group" id="causal">
+          <div class="ctx-radio" onclick="selectRadio('causal','sim',this)">Sim (ex.: PIB, renda, clima)</div>
+          <div class="ctx-radio" onclick="selectRadio('causal','nao',this)">Não disponível</div>
+        </div>
+      </div>
+    </div>
+    <div class="ob-nav">
+      <button class="btn-back" onclick="goStep(2)">← Voltar</button>
+      <button class="btn-next" id="btnNext3" onclick="goStep(4)" disabled>Próximo →</button>
+    </div>
+  </div>
+
+  <!-- ── STEP 4: SUGESTÃO DE MÉTODO ── -->
+  <div id="step4" style="display:none">
+    <div class="ob-step-label"><div class="ob-step-num">4</div>Etapa 4 de 4</div>
+    <div class="ob-title">Método recomendado</div>
+    <div class="ob-subtitle">Com base no perfil do produto, o sistema identificou os métodos mais adequados. Você pode confirmar ou escolher outro.</div>
+    <div class="summary-bar" id="summaryBar"></div>
+    <div class="ob-tip" id="tip4"></div>
+    <div class="method-suggestion-grid" id="methodSuggestGrid"></div>
+    <div class="ob-nav">
+      <button class="btn-back" onclick="goStep(3)">← Voltar</button>
+      <button class="btn-launch" id="btnLaunch" onclick="launchDashboard()" disabled>
+        <span>🚀</span> Iniciar Simulação
+      </button>
+    </div>
+  </div>
+
+</div><!-- ob-card -->
+</div><!-- onboarding -->
+
+<!-- ══════════════════════════════════
+     DASHBOARD
+══════════════════════════════════ -->
+<div id="dashboard">
+  <div class="dash-layout">
+
+    <!-- SIDEBAR -->
+    <aside class="dash-sidebar">
+      <div class="sb-section">
+        <div class="sb-lbl">Produto Selecionado</div>
+        <div class="ctx-pill" id="ctxPill"></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-lbl">Método de Previsão</div>
+        <div class="method-tabs" id="methodTabs"></div>
+      </div>
+      <div class="sb-section" id="paramSection"></div>
+      <button class="btn-run" onclick="runForecast()" id="btnRun">
+        <span>▶</span> Calcular Previsão
+      </button>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="dash-main" id="dashMain">
+      <div class="empty-state fade-in">
+        <div class="empty-icon">📦</div>
+        <div style="font-size:14px">Selecione um método ao lado e clique em <strong>Calcular Previsão</strong></div>
+      </div>
+    </main>
+
+  </div>
+</div><!-- dashboard -->
+
+</div><!-- app -->
+
+<script>
+// ══════════════════════════════════
+// PARÂMETROS DE URL (integração APO Lab)
+// ══════════════════════════════════
+const URL_PARAMS = new URLSearchParams(window.location.search);
+const URL_PRODUTO = URL_PARAMS.get('produto');   // ex: 'isotonica'
+const URL_ORIGEM  = URL_PARAMS.get('origem');    // 'apolab'
+const URL_VOLTAR  = URL_PARAMS.get('voltar');    // URL do APO Lab
+
+// Etapas da jornada para a barra de navegação
+const JORNADA = [
+  {id:'demanda',    icon:'📈', name:'Previsão',    url:null},
+  {id:'localizacao',icon:'📍', name:'Localização', url:'https://apo-localizacao.netlify.app'},
+  {id:'modelo',     icon:'⚙️', name:'Modelo Prod.',url:'https://apo-producao.netlify.app'},
+  {id:'capacidade', icon:'⚡', name:'Capacidade',  url:'https://apo-capacidade.netlify.app'},
+  {id:'arranjo',    icon:'🏭', name:'Arranjo',     url:'https://apo-arranjo.netlify.app'},
+  {id:'agregado',   icon:'📋', name:'Pl. Agr.',    url:null},
+  {id:'pmp',        icon:'📅', name:'PMP',         url:null},
+  {id:'mrp',        icon:'🔩', name:'MRP',         url:null},
+  {id:'sequencia',  icon:'🗓️', name:'Sequen.',     url:null},
+];
+
+function initJourneyBar() {
+  const bar = document.getElementById('journeyBar');
+  bar.style.display = 'flex';
+  // M1 não tem div.app — adiciona has-journey no body como fallback
+  const appEl = document.querySelector('.app') || document.body;
+  appEl.classList.add('has-journey');
+  // ajusta onboarding e sidebar para nova altura
+  document.getElementById('onboarding').style.top = '152px';
+  document.querySelectorAll('#onboarding, .dash-sidebar').forEach(el => {
+    if (el.id === 'onboarding') el.style.top = '152px';
+  });
+
+  // preenche steps
+  const stepsEl = document.getElementById('jbSteps');
+  JORNADA.forEach((step, i) => {
+    const span = document.createElement('div');
+    span.className = 'jb-step' + (step.id === 'demanda' ? ' current' : '');
+    span.innerHTML = `<span class="jb-step-icon">${step.icon}</span>${step.name}`;
+    if (step.url) span.classList.add('clickable');
+    span.onclick = () => { if (step.url) irModulo(step.id); };
+    stepsEl.appendChild(span);
+    if (i < JORNADA.length - 1) {
+      const arr = document.createElement('span');
+      arr.style.cssText = 'font-size:9px;color:#2a2520;padding:0 1px;flex-shrink:0';
+      arr.textContent = '›';
+      stepsEl.appendChild(arr);
+    }
+  });
+
+  // produto na barra
+  if (URL_PRODUTO) {
+    const icons = {isotonica:'🧃',sorvete:'🍦',farinha:'🌾',farmaceutico:'💊',projeto:'🏗️'};
+    const names = {isotonica:'Isotônica',sorvete:'Sorvete',farinha:'Farinha',farmaceutico:'Medicamento',projeto:'Projeto'};
+    document.getElementById('jbProduct').textContent =
+      `${icons[URL_PRODUTO]||'📦'} ${names[URL_PRODUTO]||URL_PRODUTO}`;
+  }
+}
+
+function voltarApoLab() {
+  const dest = URL_VOLTAR || 'https://apolab-ufrrj.netlify.app';
+  window.location.href = dest;
+}
+
+function irModulo(id) {
+  const step = JORNADA.find(s => s.id === id);
+  if (!step || !step.url) return;
+  const params = new URLSearchParams();
+  params.set('origem', 'apolab');
+  if (URL_PRODUTO) params.set('produto', URL_PRODUTO);
+  if (URL_VOLTAR)  params.set('voltar', URL_VOLTAR);
+  window.location.href = step.url + '?' + params.toString();
+}
+
+// ══════════════════════════════════
+// STATE
+// ══════════════════════════════════
+const STATE = {
+  product: null, lifecycle: null,
+  horizon: null, freq: null, stability: null, causal: null,
+  method: null,
+  radios: {}
+};
+
+const PRODUCTS = {
+  isotonica: {
+    label:'Bebida Isotônica', icon:'🧃', sector:'Bebidas',
+    type:'sazonal', tags:['Sazonal','Maduro'],
+    data:[410,320,290,350,520,680,920,870,600,360,280,300,440,340,310,380,560,720,980,910,640,390,300,320]
+  },
+  sorvete: {
+    label:'Sorvete Premium', icon:'🍦', sector:'Gelados',
+    type:'sazonal_cre', tags:['Sazonal','Crescimento'],
+    data:[200,180,160,220,380,620,880,860,560,280,200,210,240,210,190,260,430,680,960,940,610,310,220,230]
+  },
+  farinha: {
+    label:'Farinha de Trigo', icon:'🌾', sector:'Moagem',
+    type:'estavel', tags:['Estável','Maduro'],
+    data:[850,870,840,890,860,880,910,870,900,850,880,870,880,900,870,910,890,900,920,880,910,870,900,880]
+  },
+  farmaceutico: {
+    label:'Medicamento Genérico', icon:'💊', sector:'Farmacêutico',
+    type:'estavel', tags:['Estável','Regulado'],
+    data:[420,425,430,435,428,432,438,445,440,442,448,452,455,458,460,462,465,468,470,472,475,478,480,482],
+    yLabel:'mil unidades/mês', yUnit:'mil un.',
+  },
+  autoeletrico: {
+    label:'Automóvel Elétrico', icon:'🚗', sector:'Indústria automotiva',
+    type:'crescimento', tags:['Crescimento','Alta variedade'],
+    data:[120,135,150,170,195,220,260,300,340,390,440,500,560,630,700,780,860,950,1050,1160,1280,1410,1550,1700]
+  },
+  projeto: {
+    label:'Construção sob encomenda', icon:'🏗️', sector:'Serviços',
+    type:'estavel', tags:['Projeto','Alta customização'],
+    data:[3,2,4,3,5,3,4,2,3,4,3,5,4,3,2,4,3,5,4,3,4,2,3,4]
+  }
+};
+
+const MONTHS = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+const MONTHS24 = [...MONTHS.map(m=>m+'/A1'), ...MONTHS.map(m=>m+'/A2')];
+
+let chartInst = null;
+let currentMethod = null;
+
+// ══════════════════════════════════
+// ONBOARDING NAVIGATION
+// ══════════════════════════════════
+function goStep(n) {
+  [1,2,3,4].forEach(i => {
+    document.getElementById('step'+i).style.display = i===n ? 'block' : 'none';
+  });
+  // progress
+  [1,2,3,4].forEach(i => {
+    const el = document.getElementById('ps'+i);
+    el.className = 'progress-step' + (i<n?' done': i===n?' active':'');
+  });
+  // populate step 4
+  if (n===4) buildMethodSuggestions();
+  // scroll top
+  document.getElementById('onboarding').scrollTo({top:0, behavior:'smooth'});
+  // animate
+  document.getElementById('obCard').style.animation = 'none';
+  requestAnimationFrame(()=>{ document.getElementById('obCard').style.animation=''; });
+}
+
+function selectProduct(key, el) {
+  STATE.product = key;
+  document.querySelectorAll('#productGrid .product-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btnNext1').disabled = false;
+  // auto-filter lifecycle tip
+  const p = PRODUCTS[key];
+  document.getElementById('tip2').innerHTML = `<strong>Produto selecionado:</strong> ${p.icon} ${p.label}
+    — padrão de demanda: <strong>${p.type==='estavel'?'estável':p.type==='crescimento'?'crescimento acelerado':'sazonal'}</strong>.
+    Escolha a fase mais próxima da situação atual do produto.`;
+}
+
+function selectLC(key, el) {
+  STATE.lifecycle = key;
+  document.querySelectorAll('#lcGrid .lc-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btnNext2').disabled = false;
+}
+
+function selectRadio(group, value, el) {
+  STATE.radios[group] = value;
+  STATE[group] = value;
+  document.querySelectorAll('#'+group+' .ctx-radio').forEach(r=>r.classList.remove('sel'));
+  el.classList.add('sel');
+  checkStep3();
+}
+
+function checkStep3() {
+  STATE.horizon = document.getElementById('ctx_horizon').value;
+  STATE.freq = document.getElementById('ctx_freq').value;
+  const ok = STATE.horizon && STATE.freq && STATE.stability && STATE.causal;
+  document.getElementById('btnNext3').disabled = !ok;
+}
+
+// ══════════════════════════════════
+// METHOD SUGGESTION LOGIC
+// ══════════════════════════════════
+function buildMethodSuggestions() {
+  const p = PRODUCTS[STATE.product];
+  const lc = STATE.lifecycle;
+  const hz = parseInt(STATE.horizon||6);
+
+  // score each method
+  const methods = [
+    { id:'mm',    icon:'📊', name:'Média Móvel Simples',       kind:'Quantitativo · Série temporal' },
+    { id:'mes',   icon:'📈', name:'Suavização Exponencial',    kind:'Quantitativo · Série temporal' },
+    { id:'hw',    icon:'🌊', name:'Holt-Winters',              kind:'Quantitativo · Sazonal + tendência' },
+    { id:'reg',   icon:'📉', name:'Regressão Linear',          kind:'Causal · Tendência' },
+    { id:'delphi',icon:'🧠', name:'Delphi',                    kind:'Qualitativo · Consenso de especialistas' },
+  ];
+
+  // scoring
+  const score = {};
+  methods.forEach(m => score[m.id] = 0);
+
+  const type = p.type;
+  if (type==='sazonal'||type==='sazonal_cre')  { score['hw']+=3; score['mm']-=1; score['mes']-=1 }
+  if (type==='crescimento')                    { score['reg']+=3; score['hw']+=1 }
+  if (type==='estavel')                        { score['mm']+=2; score['mes']+=2; score['reg']+=1 }
+
+  if (lc==='lancamento')  { score['delphi']+=3; score['reg']+=1; score['mm']-=2 }
+  if (lc==='crescimento') { score['reg']+=2; score['hw']+=1 }
+  if (lc==='maturidade')  { score['hw']+=2; score['mes']+=1; score['mm']+=1 }
+  if (lc==='declinio')    { score['reg']+=2; score['mes']+=1 }
+
+  if (hz<=3)  { score['mm']+=1; score['mes']+=1 }
+  if (hz>=12) { score['hw']+=1; score['reg']+=1 }
+
+  if (STATE.causal==='nao') { score['reg']-=1 }
+  if (STATE.stability==='volatil') { score['delphi']+=1; score['mm']-=1 }
+
+  const sorted = methods.sort((a,b)=>score[b.id]-score[a.id]);
+  const topScore = score[sorted[0].id];
+
+  const whyMap = {
+    mm:    'Simples e transparente. Ideal para demanda estável de curto prazo. Cada período tem peso igual.',
+    mes:   'Dá mais peso aos dados recentes, reage a mudanças com agilidade. Bom para séries sem sazonalidade.',
+    hw:    'Captura nível, tendência e sazonalidade simultaneamente. O mais completo para produtos sazonais.',
+    reg:   'Modela a tendência de longo prazo explicitamente. Ótimo para produtos em crescimento ou declínio.',
+    delphi:'Quando dados históricos são insuficientes, o julgamento estruturado de especialistas é a melhor alternativa.',
+  };
+
+  // summary bar
+  const lc_labels = {lancamento:'Lançamento',crescimento:'Crescimento',maturidade:'Maturidade',declinio:'Declínio'};
+  const hz_labels = {'3':'Curto prazo (3 m)','6':'Médio prazo (6 m)','12':'Longo prazo (12 m)'};
+  document.getElementById('summaryBar').innerHTML = `
+    <div class="sum-item"><div class="sum-lbl">Produto</div><div class="sum-val">${p.icon} ${p.label}</div></div>
+    <div class="sum-item"><div class="sum-lbl">Fase</div><div class="sum-val">${lc_labels[lc]||lc}</div></div>
+    <div class="sum-item"><div class="sum-lbl">Horizonte</div><div class="sum-val">${hz_labels[STATE.horizon]||STATE.horizon+' m'}</div></div>
+    <div class="sum-item"><div class="sum-lbl">Mercado</div><div class="sum-val">${STATE.stability}</div></div>
+    <div class="sum-item"><div class="sum-lbl">Variáveis causais</div><div class="sum-val">${STATE.causal==='sim'?'Disponíveis':'Não disponíveis'}</div></div>`;
+
+  document.getElementById('tip4').innerHTML = `<strong>Como o sistema decidiu:</strong>
+    O perfil <em>"${p.label} · ${lc_labels[lc]}"</em> com horizonte de <em>${hz_labels[STATE.horizon]||STATE.horizon+' meses'}</em> e mercado <em>${STATE.stability}</em>
+    favorece métodos que ${type.includes('sazonal')?'capturam sazonalidade':type==='crescimento'?'modelam tendência de alta':'lidam bem com demanda estável'}.
+    Você pode confirmar a sugestão ou escolher um método diferente para comparar resultados.`;
+
+  const grid = document.getElementById('methodSuggestGrid');
+  grid.innerHTML = '';
+  let firstRec = true;
+  sorted.forEach(m => {
+    const isRec = score[m.id] === topScore && firstRec;
+    if (isRec) firstRec = false;
+    const div = document.createElement('div');
+    div.className = 'ms-card' + (isRec?' recommended':'');
+    div.innerHTML = `
+      <div class="ms-icon">${m.icon}</div>
+      <div>
+        <div class="ms-name">${m.name}</div>
+        <div class="ms-why">${whyMap[m.id]}</div>
+        <div style="margin-top:6px">
+          <span class="ms-badge ${isRec?'badge-rec':'badge-ok'}">${isRec?'★ Recomendado':'Alternativa'}</span>
+        </div>
+      </div>
+      <div class="ms-check" id="chk_${m.id}"></div>`;
+    div.onclick = () => {
+      document.querySelectorAll('.ms-card').forEach(c=>c.classList.remove('selected'));
+      div.classList.add('selected');
+      STATE.method = m.id;
+      document.getElementById('btnLaunch').disabled = false;
+    };
+    grid.appendChild(div);
+    // auto-select top
+    if (score[m.id]===topScore && grid.querySelectorAll('.ms-card.selected').length===0) {
+      div.click();
+    }
+  });
+}
+
+function launchDashboard() {
+  document.getElementById('onboarding').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+  // update progress all done
+  [1,2,3,4].forEach(i => document.getElementById('ps'+i).classList.add('done'));
+  buildDashboard();
+}
+
+function restartOnboarding() {
+  STATE.product=null; STATE.lifecycle=null; STATE.horizon=null;
+  STATE.freq=null; STATE.stability=null; STATE.causal=null;
+  STATE.method=null; STATE.radios={};
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('onboarding').style.display='flex';
+  [1,2,3,4].forEach(i=>{
+    const el=document.getElementById('ps'+i);
+    el.className='progress-step'+(i===1?' active':'');
+  });
+  goStep(1);
+  document.querySelectorAll('.product-card,.lc-card').forEach(c=>c.classList.remove('selected'));
+  document.querySelectorAll('.ctx-radio').forEach(r=>r.classList.remove('sel'));
+  document.getElementById('ctx_horizon').value='';
+  document.getElementById('ctx_freq').value='';
+  ['btnNext1','btnNext2','btnNext3'].forEach(id=>document.getElementById(id).disabled=true);
+}
+
+// ══════════════════════════════════
+// DASHBOARD BUILD
+// ══════════════════════════════════
+// ── TOOLTIP TEXTS ──
+const METHOD_TIPS = {
+  mm:    `<strong>Média Móvel Simples</strong><br>Calcula a média dos últimos <em>n</em> períodos. Simples e intuitiva, mas todos os períodos têm o mesmo peso e o método não capta tendência nem sazonalidade.`,
+  mes:   `<strong>Suavização Exponencial</strong><br>Dá mais peso aos dados recentes e menos aos antigos. O parâmetro α controla essa velocidade de reação. Ideal para séries sem padrão sazonal claro.`,
+  hw:    `<strong>Holt-Winters</strong><br>Decompõe a série em três componentes: <em>nível</em> (α), <em>tendência</em> (β) e <em>sazonalidade</em> (γ). É o método mais completo para produtos com oscilação regular ao longo do ano.`,
+  reg:   `<strong>Regressão Linear</strong><br>Ajusta uma reta à série histórica para capturar a tendência de longo prazo. Funciona bem para produtos em crescimento ou declínio consistente.`,
+  delphi:`<strong>Método Delphi</strong><br>Técnica qualitativa: especialistas estimam a demanda em rodadas anônimas, com feedback de médias entre as rodadas, até convergência. Indicado quando não há histórico suficiente.`,
+  comp:  `<strong>Comparação de Métodos</strong><br>Aplica todos os métodos quantitativos à mesma série e exibe as métricas de erro lado a lado, facilitando a escolha do mais adequado.`,
+};
+
+const PARAM_TIPS = {
+  n:      `<strong>Períodos (n)</strong><br>Quantos períodos passados são usados no cálculo da média. Valores altos suavizam mais a série; valores baixos reagem mais rápido a variações recentes. Tente n=3 e n=6 para comparar.`,
+  alpha:  `<strong>Alpha (α) — peso do dado recente</strong><br>Varia de 0 a 1. Próximo de <em>1</em>: reage rápido, segue bem mudanças bruscas. Próximo de <em>0</em>: série mais suave, reage devagar. Valor usual: 0,1 a 0,3.`,
+  beta:   `<strong>Beta (β) — componente de tendência</strong><br>Controla a velocidade de atualização da tendência (subida ou descida da série). Próximo de 0: tendência muda lentamente; próximo de 1: se ajusta rápido.`,
+  gamma:  `<strong>Gamma (γ) — componente sazonal</strong><br>Controla quanto os índices sazonais (ex.: pico no verão) são atualizados a cada ciclo. Valor alto: sazonalidade muda com o tempo; valor baixo: padrão sazonal estável.`,
+  future: `<strong>Períodos futuros adicionais</strong><br>Quantos períodos além do histórico serão projetados pela reta de regressão. Quanto mais longo o horizonte, maior a incerteza da projeção.`,
+};
+
+function tip(text) {
+  return `<span class="tip-wrap"><i class="tip-icon">?</i><span class="tip-balloon">${text}</span></span>`;
+}
+
+const METHODS_LIST = [
+  {id:'mm',    icon:'📊', name:'Média Móvel',          kind:'Quantitativo · Série temporal'},
+  {id:'mes',   icon:'📈', name:'Suavização Exponencial',kind:'Quantitativo · Série temporal'},
+  {id:'hw',    icon:'🌊', name:'Holt-Winters',          kind:'Sazonal + tendência'},
+  {id:'reg',   icon:'📉', name:'Regressão Linear',      kind:'Causal · Tendência'},
+  {id:'delphi',icon:'🧠', name:'Delphi',                kind:'Qualitativo'},
+  {id:'comp',  icon:'⚖️', name:'Comparar Métodos',      kind:'Síntese'},
+];
+
+function buildDashboard() {
+  const p = PRODUCTS[STATE.product];
+  document.getElementById('ctxPill').innerHTML = `
+    <div class="ctx-pill-row"><span class="ctx-pill-key">Produto</span><span class="ctx-pill-val">${p.icon} ${p.label}</span></div>
+    <div class="ctx-pill-row"><span class="ctx-pill-key">Fase</span><span class="ctx-pill-val">${STATE.lifecycle}</span></div>
+    <div class="ctx-pill-row"><span class="ctx-pill-key">Horizonte</span><span class="ctx-pill-val">${STATE.horizon} meses</span></div>`;
+
+  const tabs = document.getElementById('methodTabs');
+  tabs.innerHTML = '';
+  METHODS_LIST.forEach(m => {
+    const isRec = m.id === STATE.method;
+    const div = document.createElement('button');
+    div.className = 'm-tab' + (isRec?' active':'') + (isRec?' rec-tab':'');
+    div.dataset.method = m.id;
+    div.innerHTML = `
+      <div class="t-icon">${m.icon}</div>
+      <div class="t-info">
+        <div class="t-name">${m.name}${isRec?' ★':''}${tip(METHOD_TIPS[m.id]||'')}</div>
+        <div class="t-kind">${m.kind}</div>
+      </div>`;
+    div.onclick = () => {
+      document.querySelectorAll('.m-tab').forEach(t=>t.classList.remove('active'));
+      div.classList.add('active');
+      currentMethod = m.id;
+      buildParamSection();
+    };
+    tabs.appendChild(div);
+  });
+
+  currentMethod = STATE.method;
+  buildParamSection();
+}
+
+function buildParamSection() {
+  const el = document.getElementById('paramSection');
+  if (currentMethod==='delphi'||currentMethod==='comp') { el.innerHTML=''; return; }
+  let html = `<div class="sb-lbl">Parâmetros</div>`;
+
+  if (currentMethod==='mm') {
+    html+=`<div class="ctrl-group">
+      <div class="ctrl-lbl-row"><span class="ctrl-lbl">Períodos (n)</span>${tip(PARAM_TIPS.n)}</div>
+      <div class="ctrl-range-row"><input type="range" class="ctrl-range" id="p_n" min="2" max="6" value="3" step="1" oninput="document.getElementById('v_n').textContent=this.value"><span class="ctrl-val" id="v_n">3</span></div>
+    </div>`;
+  }
+  if (currentMethod==='mes') {
+    html+=`<div class="ctrl-group">
+      <div class="ctrl-lbl-row"><span class="ctrl-lbl">Alpha (α)</span>${tip(PARAM_TIPS.alpha)}</div>
+      <div class="ctrl-range-row"><input type="range" class="ctrl-range" id="p_alpha" min="0.05" max="0.95" value="0.3" step="0.05" oninput="document.getElementById('v_alpha').textContent=parseFloat(this.value).toFixed(2)"><span class="ctrl-val" id="v_alpha">0.30</span></div>
+    </div>`;
+  }
+  if (currentMethod==='hw') {
+    html+=`
+      <div class="ctrl-group">
+        <div class="ctrl-lbl-row"><span class="ctrl-lbl">Alpha (α) — nível</span>${tip(PARAM_TIPS.alpha)}</div>
+        <div class="ctrl-range-row"><input type="range" class="ctrl-range" id="p_alpha" min="0.05" max="0.95" value="0.3" step="0.05" oninput="document.getElementById('v_alpha').textContent=parseFloat(this.value).toFixed(2)"><span class="ctrl-val" id="v_alpha">0.30</span></div>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-lbl-row"><span class="ctrl-lbl">Beta (β) — tendência</span>${tip(PARAM_TIPS.beta)}</div>
+        <div class="ctrl-range-row"><input type="range" class="ctrl-range" id="p_beta" min="0.05" max="0.95" value="0.2" step="0.05" oninput="document.getElementById('v_beta').textContent=parseFloat(this.value).toFixed(2)"><span class="ctrl-val" id="v_beta">0.20</span></div>
+      </div>
+      <div class="ctrl-group">
+        <div class="ctrl-lbl-row"><span class="ctrl-lbl">Gamma (γ) — sazonalidade</span>${tip(PARAM_TIPS.gamma)}</div>
+        <div class="ctrl-range-row"><input type="range" class="ctrl-range" id="p_gamma" min="0.05" max="0.95" value="0.3" step="0.05" oninput="document.getElementById('v_gamma').textContent=parseFloat(this.value).toFixed(2)"><span class="ctrl-val" id="v_gamma">0.30</span></div>
+      </div>`;
+  }
+  if (currentMethod==='reg') {
+    html+=`<div class="ctrl-group">
+      <div class="ctrl-lbl-row"><span class="ctrl-lbl">Períodos futuros adicionais</span>${tip(PARAM_TIPS.future)}</div>
+      <div class="ctrl-range-row"><input type="range" class="ctrl-range" id="p_future" min="1" max="12" value="6" step="1" oninput="document.getElementById('v_future').textContent=this.value"><span class="ctrl-val" id="v_future">6</span></div>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+// ══════════════════════════════════
+// ALGORITHMS
+// ══════════════════════════════════
+function movingAverage(data, n, h) {
+  const f=[]; for(let i=0;i<data.length;i++) f.push(i>=n ? data.slice(i-n,i).reduce((a,b)=>a+b)/n : null);
+  let last=data.slice(-n);
+  const fut=[];
+  for(let i=0;i<h;i++){const v=last.reduce((a,b)=>a+b)/n; fut.push(v); last=[...last.slice(1),v];}
+  return {fitted:f,future:fut};
+}
+function expSmoothing(data, a, h) {
+  const f=[data[0]];
+  for(let i=1;i<data.length;i++) f.push(a*data[i]+(1-a)*f[f.length-1]);
+  const fut=Array(h).fill(f[f.length-1]);
+  return {fitted:[null,...f.slice(0,-1)],future:fut};
+}
+function holtWinters(data,a,b,g,s=12,h) {
+  const L=new Array(data.length+h), T=new Array(data.length+h), S=new Array(data.length+h+s);
+  const avg1=data.slice(0,s).reduce((x,y)=>x+y)/s, avg2=data.slice(s,2*s).reduce((x,y)=>x+y)/s;
+  for(let i=0;i<s;i++) S[i]=data[i]/avg1;
+  L[s-1]=avg1; T[s-1]=(avg2-avg1)/s;
+  const fitted=new Array(data.length).fill(null);
+  for(let i=s;i<data.length;i++){
+    L[i]=a*(data[i]/S[i-s])+(1-a)*(L[i-1]+T[i-1]);
+    T[i]=b*(L[i]-L[i-1])+(1-b)*T[i-1];
+    S[i]=g*(data[i]/L[i])+(1-g)*S[i-s];
+    fitted[i]=(L[i-1]+T[i-1])*S[i-s];
+  }
+  const fut=[];
+  for(let h2=1;h2<=h;h2++) fut.push((L[data.length-1]+h2*T[data.length-1])*S[data.length-s+((h2-1)%s)]);
+  return {fitted,future:fut};
+}
+function linearRegression(data, h) {
+  const n=data.length, xm=(n-1)/2, ym=data.reduce((a,b)=>a+b)/n;
+  let num=0,den=0;
+  data.forEach((y,i)=>{num+=(i-xm)*(y-ym);den+=(i-xm)**2;});
+  const bv=num/den, av=ym-bv*xm;
+  return {fitted:data.map((_,i)=>av+bv*i), future:Array.from({length:h},(_,i)=>av+bv*(n+i)), a:av, b:bv};
+}
+function calcErrors(actual, fitted) {
+  const pairs=actual.map((a,i)=>[a,fitted[i]]).filter(([a,f])=>f!==null&&!isNaN(f));
+  const errs=pairs.map(([a,f])=>a-f);
+  const mae=errs.reduce((s,e)=>s+Math.abs(e),0)/errs.length;
+  const rmse=Math.sqrt(errs.reduce((s,e)=>s+e**2,0)/errs.length);
+  const mape=pairs.reduce((s,[a,f])=>s+Math.abs((a-f)/a),0)/pairs.length*100;
+  return {mae,rmse,mape};
+}
+
+// ══════════════════════════════════
+// RUN FORECAST
+// ══════════════════════════════════
+function runForecast() {
+  const btn=document.getElementById('btnRun');
+  btn.innerHTML='<span class="spinner"></span> Calculando...';
+  btn.disabled=true;
+  setTimeout(()=>{doForecast(); btn.innerHTML='<span>▶</span> Calcular Previsão'; btn.disabled=false;}, 400);
+}
+
+function doForecast() {
+  if (currentMethod==='delphi') { renderDelphi(); return; }
+  if (currentMethod==='comp')   { renderComp(); return; }
+
+  const p = PRODUCTS[STATE.product];
+  const data = p.data;
+  const hz = parseInt(STATE.horizon||6);
+  let result, label, formula;
+
+  if (currentMethod==='mm') {
+    const n=parseInt(document.getElementById('p_n')?.value||3);
+    result=movingAverage(data,n,hz);
+    label=`Média Móvel Simples (n=${n})`;
+    formula=`<span class="fv">F<sub>t+1</sub></span> <span class="fo">=</span> <span class="fo">(</span><span class="fv">D<sub>t</sub></span><span class="fo"> + ... + </span><span class="fv">D<sub>t-${n-1}</sub></span><span class="fo">)</span> <span class="fo">/</span> <span class="fn">${n}</span> &nbsp;<span class="fc">// média aritmética dos últimos ${n} períodos</span>`;
+  } else if (currentMethod==='mes') {
+    const a=parseFloat(document.getElementById('p_alpha')?.value||0.3);
+    result=expSmoothing(data,a,hz);
+    label=`Suavização Exponencial Simples (α=${a.toFixed(2)})`;
+    formula=`<span class="fv">F<sub>t+1</sub></span> <span class="fo">=</span> <span class="fn">${a.toFixed(2)}</span><span class="fo">·</span><span class="fv">D<sub>t</sub></span> <span class="fo">+</span> <span class="fn">${(1-a).toFixed(2)}</span><span class="fo">·</span><span class="fv">F<sub>t</sub></span> &nbsp;<span class="fc">// α alto = reage rápido; α baixo = série mais suave</span>`;
+  } else if (currentMethod==='hw') {
+    const a=parseFloat(document.getElementById('p_alpha')?.value||0.3);
+    const bv=parseFloat(document.getElementById('p_beta')?.value||0.2);
+    const g=parseFloat(document.getElementById('p_gamma')?.value||0.3);
+    result=holtWinters(data,a,bv,g,12,hz);
+    label=`Holt-Winters (α=${a.toFixed(2)}, β=${bv.toFixed(2)}, γ=${g.toFixed(2)})`;
+    formula=`<span class="fv">L<sub>t</sub></span><span class="fo">=</span><span class="fn">${a.toFixed(2)}</span><span class="fo">(D<sub>t</sub>/S<sub>t-s</sub>)</span><span class="fo">+</span><span class="fn">${(1-a).toFixed(2)}</span><span class="fo">(L<sub>t-1</sub>+T<sub>t-1</sub>)</span><br>
+<span class="fv">T<sub>t</sub></span><span class="fo">=</span><span class="fn">${bv.toFixed(2)}</span><span class="fo">(L<sub>t</sub>-L<sub>t-1</sub>)</span><span class="fo">+</span><span class="fn">${(1-bv).toFixed(2)}</span><span class="fo">T<sub>t-1</sub></span><br>
+<span class="fv">S<sub>t</sub></span><span class="fo">=</span><span class="fn">${g.toFixed(2)}</span><span class="fo">(D<sub>t</sub>/L<sub>t</sub>)</span><span class="fo">+</span><span class="fn">${(1-g).toFixed(2)}</span><span class="fo">S<sub>t-s</sub></span> &nbsp;<span class="fc">// decompõe nível (L), tendência (T) e sazonalidade (S)</span>`;
+  } else if (currentMethod==='reg') {
+    result=linearRegression(data,hz);
+    label=`Regressão Linear`;
+    formula=`<span class="fv">F<sub>t</sub></span> <span class="fo">=</span> <span class="fn">${result.a.toFixed(1)}</span> <span class="fo">+</span> <span class="fn">${result.b.toFixed(2)}</span><span class="fo">·</span><span class="fv">t</span> &nbsp;<span class="fc">// a=intercepto, b=inclinação (tendência/período)</span>`;
+  }
+
+  const errs=calcErrors(data,result.fitted);
+  renderQuantitative(p,data,result,label,formula,errs,hz);
+}
+
+function renderQuantitative(p,data,result,label,formula,errs,hz) {
+  if (chartInst){chartInst.destroy();chartInst=null;}
+  const labels=[...MONTHS24.slice(0,data.length),...Array.from({length:hz},(_,i)=>`P+${i+1}`)];
+  const actual=[...data,...Array(hz).fill(null)];
+  const fitted=[...result.fitted,...Array(hz).fill(null)];
+  const future=[...Array(data.length).fill(null),...result.future];
+  const mapeClass=errs.mape<10?'badge-good':errs.mape<20?'badge-warn':'badge-bad';
+  const mapeText=errs.mape<10?'Excelente':errs.mape<20?'Aceitável':'Alto erro';
+
+  const rows=data.slice(-6).map((d,i,arr)=>{
+    const idx=data.length-arr.length+i;
+    const f=result.fitted[idx];
+    const e=f!==null?Math.abs(d-f).toFixed(0):'—';
+    const ep=f!==null?(Math.abs(d-f)/d*100).toFixed(1)+'%':'—';
+    return `<tr><td class="td-lbl">${MONTHS24[idx]}</td><td>${d.toLocaleString('pt-BR')}</td><td class="td-fc">${f!==null?Math.round(f).toLocaleString('pt-BR'):'—'}</td><td>${e}</td><td>${ep}</td></tr>`;
+  }).join('');
+  const futRows=result.future.map((f,i)=>`<tr><td class="td-lbl">Prev +${i+1}</td><td>—</td><td class="td-fc">${Math.round(f).toLocaleString('pt-BR')}</td><td>—</td><td>—</td></tr>`).join('');
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner">
+      <div class="mb-icon">📌</div>
+      <div>
+        <div class="mb-title">${label}</div>
+        <div class="mb-desc">${p.icon} ${p.label} · ${p.sector}</div>
+        <div class="mb-tags">
+          ${p.tags.map(t=>`<span class="mb-tag">${t}</span>`).join('')}
+          <span class="mb-tag">24 períodos históricos</span>
+          <span class="mb-tag">Horizonte: ${hz} meses</span>
+        </div>
+      </div>
+    </div>
+    <div class="metrics-row">
+      <div class="metric-card"><div class="mc-lbl">MAE</div><div class="mc-val">${errs.mae.toFixed(1)}</div><div class="mc-sub">Erro médio absoluto</div></div>
+      <div class="metric-card"><div class="mc-lbl">RMSE</div><div class="mc-val">${errs.rmse.toFixed(1)}</div><div class="mc-sub">Raiz do erro quadrático</div></div>
+      <div class="metric-card hi"><div class="mc-lbl">MAPE</div><div class="mc-val">${errs.mape.toFixed(1)}%</div><div class="mc-sub"><span class="${mapeClass}">${mapeText}</span></div></div>
+      <div class="metric-card"><div class="mc-lbl">Próxima previsão</div><div class="mc-val">${Math.round(result.future[0]).toLocaleString('pt-BR')}</div><div class="mc-sub">unidades (período +1)</div></div>
+    </div>
+    <div class="formula-box"><div class="fb-title">Fórmula</div>${formula}</div>
+    <div class="chart-card">
+      <div class="cc-header">
+        <div><div class="cc-title">Demanda real × Ajuste × Previsão futura</div><div class="cc-sub">Valores em unidades por período</div></div>
+        <div class="cc-legend">
+          <div class="leg-item"><div class="leg-dot" style="background:#12100e"></div>Real</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#1d4e8f"></div>Ajustado</div>
+          <div class="leg-item"><div class="leg-dot" style="background:#bf4020"></div>Previsão</div>
+        </div>
+      </div>
+      <canvas id="mainChart"></canvas>
+    </div>
+    <div class="table-card">
+      <div class="tc-header"><div class="tc-title">Últimos 6 períodos + ${hz} previstos</div><div style="font-size:10px;color:var(--muted)">Erro = |Real − Previsto|</div></div>
+      <table><thead><tr><th>Período</th><th>Real</th><th>Previsto</th><th>Erro abs.</th><th>Erro %</th></tr></thead>
+      <tbody>${rows}${futRows}</tbody></table>
+    </div>
+  </div>`;
+
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  chartInst=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Real',data:actual,borderColor:'#12100e',borderWidth:2,pointRadius:3,tension:.3,fill:false,spanGaps:false},
+      {label:'Ajustado',data:fitted,borderColor:'#1d4e8f',borderWidth:1.8,pointRadius:2,tension:.3,fill:false,spanGaps:false},
+      {label:'Previsão',data:future,borderColor:'#bf4020',borderWidth:2.5,borderDash:[6,3],pointRadius:4,tension:.2,fill:false,spanGaps:false}
+    ]},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw!==null?`${c.dataset.label}: ${Math.round(c.raw).toLocaleString('pt-BR')}`:null}}},
+      scales:{
+        x:{grid:{color:'#e2dcd0'},ticks:{font:{family:'DM Mono',size:9},maxRotation:45,maxTicksLimit:14}},
+        y:{grid:{color:'#e2dcd0'},ticks:{font:{family:'DM Mono',size:10},callback:v=>v.toLocaleString('pt-BR')}}
+      }
+    }
+  });
+}
+
+function renderDelphi() {
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  const nE=4, nR=3;
+  const base=1200; let spread=400;
+  const rounds=[];
+  for(let r=0;r<nR;r++){
+    const exp=Array.from({length:nE},()=>Math.round(base+(Math.random()-.5)*spread+r*30));
+    const mean=exp.reduce((a,b)=>a+b)/nE;
+    const std=Math.sqrt(exp.reduce((a,b)=>a+(b-mean)**2,0)/nE);
+    rounds.push({exp,mean:Math.round(mean),std:Math.round(std)});
+    spread*=.55;
+  }
+  const final=rounds[nR-1].mean;
+  const names=['Gerente de Vendas','Pesquisador de Mercado','Diretor Comercial','Especialista em Trade'];
+  const emojis=['👔','🔬','💼','🏪'];
+  const colors=['#fef3c7','#dbeafe','#d1fae5','#fce7f3'];
+
+  const convBars=rounds.map((r,ri)=>{
+    const cv=r.std/r.mean*100;
+    const conv=Math.max(0,100-cv*3);
+    const col=conv>70?'#1a7a5e':conv>40?'#b8860b':'#bf4020';
+    return `<div class="conv-wrap"><div class="conv-lbl"><span>Rodada ${ri+1}</span><span style="font-family:'DM Mono',monospace">CV=${cv.toFixed(1)}% · Convergência ${conv.toFixed(0)}%</span></div><div class="conv-bg"><div class="conv-bar" style="width:${conv}%;background:${col}"></div></div></div>`;
+  }).join('');
+
+  const roundsHtml=rounds.map((r,ri)=>`
+    <div style="margin-bottom:16px">
+      <div class="round-badge"><div class="r-dot"></div>Rodada ${ri+1}</div>
+      <div class="delphi-grid">
+        ${r.exp.map((v,ei)=>`<div class="expert-card"><div class="ex-header"><div class="ex-avatar" style="background:${colors[ei]}">${emojis[ei]}</div><div><div class="ex-name">${names[ei]}</div><div class="ex-role">Especialista ${ei+1}</div></div></div>
+          <div style="display:flex;justify-content:space-between;align-items:center"><span style="font-size:11px;color:var(--muted)">Estimativa ${ri===0?'inicial':'revisada'}</span><span style="font-family:'DM Mono',monospace;font-size:17px;font-weight:600;color:var(--blue)">${v.toLocaleString('pt-BR')}</span></div>
+          ${ri>0?`<div style="font-size:10px;color:var(--muted);margin-top:3px">Desvio da média: ${Math.abs(v-r.mean).toLocaleString('pt-BR')} un.</div>`:''}</div>`).join('')}
+      </div>
+      <div style="background:white;border:1.5px solid var(--border);border-radius:8px;padding:11px 15px;display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px">
+        <div><div style="font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Média</div><div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:600">${r.mean.toLocaleString('pt-BR')}</div></div>
+        <div><div style="font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">Desvio padrão</div><div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:600">${r.std.toLocaleString('pt-BR')}</div></div>
+        <div><div style="font-size:9px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px">CV (%)</div><div style="font-family:'DM Mono',monospace;font-size:15px;font-weight:600">${(r.std/r.mean*100).toFixed(1)}%</div></div>
+      </div>
+    </div>`).join('');
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">🧠</div><div>
+      <div class="mb-title">Método Delphi — Consenso de Especialistas</div>
+      <div class="mb-desc">Técnica qualitativa iterativa: especialistas emitem estimativas em rodadas anônimas; o mediador retroalimenta com médias e dispersões até convergência.</div>
+      <div class="mb-tags"><span class="mb-tag">Qualitativo</span><span class="mb-tag">Iterativo</span><span class="mb-tag">${nR} rodadas</span><span class="mb-tag">${nE} especialistas</span></div>
+    </div></div>
+    <div class="metrics-row">
+      <div class="metric-card hi"><div class="mc-lbl">Previsão Final</div><div class="mc-val">${final.toLocaleString('pt-BR')}</div><div class="mc-sub">unidades (consenso)</div></div>
+      <div class="metric-card"><div class="mc-lbl">CV Final</div><div class="mc-val">${(rounds[nR-1].std/rounds[nR-1].mean*100).toFixed(1)}%</div><div class="mc-sub">meta: CV &lt; 10%</div></div>
+      <div class="metric-card"><div class="mc-lbl">Desvio final</div><div class="mc-val">±${rounds[nR-1].std.toLocaleString('pt-BR')}</div><div class="mc-sub">dispersão remanescente</div></div>
+      <div class="metric-card"><div class="mc-lbl">Rodadas</div><div class="mc-val">${nR}</div><div class="mc-sub">até convergência</div></div>
+    </div>
+    <div class="chart-card"><div class="cc-header"><div><div class="cc-title">Convergência por rodada</div></div></div>${convBars}</div>
+    ${roundsHtml}
+    <div class="formula-box"><div class="fb-title">Processo Delphi</div>
+      <span class="fn">1.</span> Problema definido e distribuído anonimamente<br>
+      <span class="fn">2.</span> Especialistas emitem estimativas independentes<br>
+      <span class="fn">3.</span> Mediador calcula <span class="fv">média</span> e <span class="fv">CV</span> e retroalimenta o grupo<br>
+      <span class="fn">4.</span> Especialistas discrepantes revisam (ou justificam) suas posições<br>
+      <span class="fn">5.</span> Repete até <span class="fv">CV &lt; 10%</span> (critério de convergência usual)
+    </div>
+  </div>`;
+}
+
+function renderComp() {
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  const data=PRODUCTS[STATE.product].data;
+  const hz=parseInt(STATE.horizon||6);
+  const mths=[
+    {id:'mm3',  label:'MM (n=3)',    color:'#1d4e8f', r:movingAverage(data,3,hz)},
+    {id:'mm6',  label:'MM (n=6)',    color:'#6b3fa0', r:movingAverage(data,6,hz)},
+    {id:'ses3', label:'SES α=0.3',   color:'#bf4020', r:expSmoothing(data,.3,hz)},
+    {id:'ses7', label:'SES α=0.7',   color:'#b8860b', r:expSmoothing(data,.7,hz)},
+    {id:'hw',   label:'Holt-Winters',color:'#1a7a5e', r:holtWinters(data,.3,.2,.3,12,hz)},
+    {id:'reg',  label:'Regressão',   color:'#c2185b', r:linearRegression(data,hz)},
+  ];
+  const allLabels=[...MONTHS24.slice(0,data.length),...Array.from({length:hz},(_,i)=>`P+${i+1}`)];
+  const datasets=[
+    {label:'Real',data:[...data,...Array(hz).fill(null)],borderColor:'#12100e',borderWidth:2.5,pointRadius:2,tension:.3,fill:false,spanGaps:false},
+    ...mths.map(m=>({label:m.label,data:[...m.r.fitted,...m.r.future],borderColor:m.color,borderWidth:1.5,borderDash:[4,2],pointRadius:1,tension:.3,fill:false,spanGaps:false}))
+  ];
+  const errRows=mths.map(m=>{
+    const e=calcErrors(data,m.r.fitted);
+    const cls=e.mape<10?'badge-good':e.mape<20?'badge-warn':'badge-bad';
+    return `<tr><td class="td-lbl" style="display:flex;align-items:center;gap:6px"><span style="width:9px;height:9px;border-radius:50%;background:${m.color};display:inline-block;flex-shrink:0"></span>${m.label}</td><td>${e.mae.toFixed(1)}</td><td>${e.rmse.toFixed(1)}</td><td><span class="${cls}">${e.mape.toFixed(1)}%</span></td><td>${Math.round(m.r.future[0]).toLocaleString('pt-BR')}</td></tr>`;
+  }).join('');
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">⚖️</div><div>
+      <div class="mb-title">Comparação de Métodos</div>
+      <div class="mb-desc">${PRODUCTS[STATE.product].icon} ${PRODUCTS[STATE.product].label} — todos os métodos aplicados à mesma série. MAPE &lt;10%: excelente; 10–20%: aceitável; &gt;20%: alto.</div>
+    </div></div>
+    <div class="chart-card"><div class="cc-header"><div><div class="cc-title">Todos os métodos sobrepostos</div><div class="cc-sub">Linha preta = demanda real</div></div></div><canvas id="mainChart"></canvas></div>
+    <div class="table-card"><div class="tc-header"><div class="tc-title">Métricas comparadas</div></div>
+      <table><thead><tr><th>Método</th><th>MAE</th><th>RMSE</th><th>MAPE</th><th>Prev. P+1</th></tr></thead><tbody>${errRows}</tbody></table>
+    </div>
+    <div class="chart-card" style="margin-bottom:0">
+      <div class="cc-header"><div><div class="cc-title">Guia de escolha do método</div></div></div>
+      <div class="comp-grid">
+        <div class="cg-cell hdr">Critério</div><div class="cg-cell hdr">Média Móvel</div><div class="cg-cell hdr">Suav. Exp.</div><div class="cg-cell hdr">Holt-Winters</div><div class="cg-cell hdr">Regressão</div>
+        <div class="cg-cell rl">Sazonalidade</div><div class="cg-cell"><span class="dot-r">✗</span> Não capta</div><div class="cg-cell"><span class="dot-r">✗</span> Não capta</div><div class="cg-cell"><span class="dot-g">✓</span> Capta bem</div><div class="cg-cell"><span class="dot-m">~</span> Parcial</div>
+        <div class="cg-cell rl">Tendência</div><div class="cg-cell"><span class="dot-r">✗</span> Não</div><div class="cg-cell"><span class="dot-r">✗</span> Não</div><div class="cg-cell"><span class="dot-g">✓</span> Sim</div><div class="cg-cell"><span class="dot-g">✓</span> Explícita</div>
+        <div class="cg-cell rl">Produto novo</div><div class="cg-cell"><span class="dot-r">✗</span> Problemático</div><div class="cg-cell"><span class="dot-m">~</span> Aceitável</div><div class="cg-cell"><span class="dot-m">~</span> Aceitável</div><div class="cg-cell"><span class="dot-g">✓</span> Recomendado</div>
+        <div class="cg-cell rl">Facilidade</div><div class="cg-cell">★★★</div><div class="cg-cell">★★★</div><div class="cg-cell">★★</div><div class="cg-cell">★★</div>
+        <div class="cg-cell rl last-row">Dados mínimos</div><div class="cg-cell last-row">Poucos</div><div class="cg-cell last-row">Poucos</div><div class="cg-cell last-row">≥ 2 ciclos</div><div class="cg-cell last-row">Var. causal</div>
+      </div>
+    </div>
+  </div>`;
+
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  chartInst=new Chart(ctx,{
+    type:'line',data:{labels:allLabels,datasets},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'bottom',labels:{font:{family:'DM Mono',size:10},boxWidth:10}},tooltip:{callbacks:{label:c=>c.raw!==null?`${c.dataset.label}: ${Math.round(c.raw).toLocaleString('pt-BR')}`:null}}},
+      scales:{
+        x:{grid:{color:'#e2dcd0'},ticks:{font:{family:'DM Mono',size:9},maxRotation:45,maxTicksLimit:14}},
+        y:{grid:{color:'#e2dcd0'},ticks:{font:{family:'DM Mono',size:10},callback:v=>v.toLocaleString('pt-BR')}}
+      }
+    }
+  });
+}
+// ══════════════════════════════════
+// INICIALIZAÇÃO
+// ══════════════════════════════════
+initJourneyBar();
+
+// Se veio do APO Lab com produto pré-selecionado, pula etapa 1
+// auto-skip step1 (produto vem da capa via URL)
+window.addEventListener('load', () => {
+  if (URL_PRODUTO && PRODUCTS[URL_PRODUTO]) {
+    STATE.product = URL_PRODUTO;
+    const p = PRODUCTS[URL_PRODUTO];
+    if(document.getElementById('tip2')) {
+      document.getElementById('tip2').innerHTML =
+        `<strong>Produto recebido do APO Lab:</strong> ${p.icon} ${p.label}
+        — padrão de demanda: <strong>${p.type==='estavel'?'estável':p.type==='crescimento'?'crescimento acelerado':'sazonal'}</strong>.
+        Escolha a fase mais próxima da situação atual do produto.`;
+    }
+  }
+  goStep(2);
+});
+
+function voltarHome(){window.location.href='https://apolab-ufrrj.netlify.app';}
+</script>
+</body>
+</html>

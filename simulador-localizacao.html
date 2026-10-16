@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APO Lab · Localização de instalações</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --ink:#12100e;--paper:#f7f4ee;--cream:#ede9df;--warm:#e2dcd0;
+  --red:#bf4020;--blue:#0a325c;--green:#4ca456;--gold:#b8860b;
+  --purple:#6b3fa0;--muted:#756e62;--border:#cec8bc;--white:#fff;
+  --shadow-sm:0 1px 4px rgba(18,16,14,.07);
+  --shadow:0 3px 14px rgba(18,16,14,.10);
+  --shadow-lg:0 8px 32px rgba(18,16,14,.14);
+  --r:10px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;font-size:14px;line-height:1.6}
+
+/* ── TOPBAR ── */
+.topbar{background:#0a325c;color:var(--paper);padding:0;position:fixed;top:0;left:0;right:0;z-index:200;border-bottom:4px solid #4ca456}
+.topbar-inner{padding:14px 28px;display:flex;align-items:center;justify-content:space-between}
+.topbar-left{display:flex;align-items:center;gap:18px}
+.topbar-logo{height:48px;width:auto;filter:brightness(0) invert(1) drop-shadow(0 0 2px rgba(255,255,255,.6));opacity:1;flex-shrink:0}
+.topbar-logo-fallback{display:none;font-family:'Fraunces',serif;font-size:18px;font-weight:900;color:white;letter-spacing:-.5px;line-height:1}
+.topbar-divider{width:1px;height:40px;background:rgba(255,255,255,.2);flex-shrink:0}
+.topbar-title{font-family:'Fraunces',serif;font-size:20px;font-weight:900;letter-spacing:-.3px;line-height:1.2}
+.topbar-sub{font-size:11px;color:#bbb;letter-spacing:.6px;margin-top:3px}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.inst-bar{background:#062848;border-top:1px solid rgba(255,255,255,.1);padding:5px 28px;display:flex;align-items:center;gap:6px;font-size:11px;color:rgba(255,255,255,.6);letter-spacing:.3px}
+.inst-sep{color:#555;margin:0 3px}
+.btn-restart{font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;padding:5px 12px;border-radius:20px;border:1.5px solid #555;background:transparent;color:#ccc;cursor:pointer;transition:all .2s}
+.btn-restart:hover{border-color:#aaa;color:white}
+
+/* ── BARRA DE JORNADA ── */
+.journey-bar{position:fixed;top:96px;left:0;right:0;z-index:190;background:#0d1f35;border-bottom:2px solid #4ca456;padding:0 20px;display:none;align-items:center;justify-content:space-between;gap:12px;height:56px}
+.jb-left{display:flex;align-items:center;gap:10px;min-width:0}
+.jb-back{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.25);background:transparent;color:rgba(255,255,255,.7);cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.jb-back:hover{border-color:#fff;color:white}
+.jb-steps{display:flex;align-items:center;overflow-x:auto;scrollbar-width:none}
+.jb-steps::-webkit-scrollbar{display:none}
+.jb-step{display:flex;align-items:center;gap:5px;padding:5px 11px;font-size:13px;font-weight:500;color:rgba(255,255,255,.8);white-space:nowrap;flex-shrink:0;border-radius:20px}
+.jb-step.current{color:#fff;background:#0a325c;border:2px solid #4ca456;font-weight:700}
+.jb-step.done{color:#4ca456}
+.jb-step.clickable{cursor:pointer;}
+.jb-step.clickable:hover{background:rgba(255,255,255,0.12);}
+.jb-step.available{color:rgba(255,255,255,.6);cursor:pointer}
+.jb-step.available:hover{color:#fff;background:rgba(255,255,255,.08)}
+.jb-step-icon{font-size:12px}
+.jb-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.jb-product{font-size:12px;font-weight:700;color:#fff;background:#4ca456;padding:4px 13px;border-radius:20px;border:none}
+.jb-nav-btn{font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;padding:6px 14px;border-radius:20px;border:1.5px solid rgba(255,255,255,.2);background:transparent;color:rgba(255,255,255,.6);cursor:pointer;white-space:nowrap;transition:all .2s}
+.jb-nav-btn:hover{border-color:rgba(255,255,255,.5);color:#fff}
+.jb-nav-btn.prev{border-color:rgba(255,255,255,.2)}
+.jb-nav-btn.next-active{border-color:#4ca456;color:#4ca456}
+.jb-nav-btn.next-active:hover{background:#4ca456;color:white}
+
+/* ── WRAPPER ── */
+.app{padding-top:96px;min-height:100vh}
+.app.has-journey{padding-top:152px}
+
+/* ── ONBOARDING ── */
+#onboarding{position:fixed;inset:0;top:96px;background:var(--paper);z-index:100;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:40px 20px 60px}
+.app.has-journey #onboarding{top:152px}
+.ob-card{width:100%;max-width:780px;animation:slideUp .45s cubic-bezier(.22,1,.36,1) both}
+@keyframes slideUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+.ob-step-label{display:inline-flex;align-items:center;gap:8px;font-size:10px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.ob-step-num{width:22px;height:22px;border-radius:50%;background:var(--blue);color:white;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.ob-title{font-family:'Fraunces',serif;font-size:30px;font-weight:900;line-height:1.15;margin-bottom:8px}
+.ob-subtitle{font-size:14px;color:var(--muted);margin-bottom:28px;line-height:1.5;max-width:560px}
+.ob-tip{background:var(--cream);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:8px;padding:12px 16px;font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:24px}
+.ob-tip strong{color:var(--ink)}
+
+/* MÉTODO CARDS */
+.method-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:28px}
+.method-card{background:var(--white);border:2px solid var(--border);border-radius:var(--r);padding:20px 18px;cursor:pointer;transition:all .2s;position:relative}
+.method-card:hover{border-color:var(--blue);transform:translateY(-2px);box-shadow:var(--shadow)}
+.method-card.selected{border-color:var(--blue);background:#f0f4fb}
+.method-card.selected::after{content:'✓';position:absolute;top:10px;right:12px;font-size:13px;font-weight:700;color:var(--blue)}
+.mc-icon{font-size:26px;margin-bottom:8px}
+.mc-name{font-weight:700;font-size:14px;margin-bottom:4px}
+.mc-desc{font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:10px}
+.mc-tags{display:flex;gap:5px;flex-wrap:wrap}
+.mc-tag{font-size:9px;font-weight:600;padding:2px 7px;border-radius:4px;letter-spacing:.4px;text-transform:uppercase}
+.tag-q{background:#ede9fe;color:#5b21b6}
+.tag-n{background:#dbeafe;color:#1e40af}
+.tag-m{background:#d1fae5;color:#065f46}
+.tag-r{background:#fef3c7;color:#92400e}
+.when-badge{font-size:9px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--cream);color:var(--muted);margin-top:8px;display:inline-block}
+
+/* NAV */
+.ob-nav{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.btn-back-ob{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;padding:10px 20px;border-radius:8px;border:1.5px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all .2s}
+.btn-back-ob:hover{border-color:var(--ink);color:var(--ink)}
+.btn-next{font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;padding:11px 28px;border-radius:8px;border:none;background:var(--blue);color:white;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:8px}
+.btn-next:hover{background:#163d72;transform:translateY(-1px);box-shadow:var(--shadow)}
+.btn-next:disabled{background:#ccc;cursor:not-allowed;transform:none}
+.btn-launch{font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;padding:13px 32px;border-radius:8px;border:none;background:var(--ink);color:white;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px}
+.btn-launch:hover{background:#2a2520;transform:translateY(-1px);box-shadow:var(--shadow-lg)}
+
+/* TOOLTIPS */
+.tip-wrap{position:relative;display:inline-flex;align-items:center}
+.tip-icon{display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:var(--border);color:var(--muted);font-size:9px;font-weight:700;cursor:help;flex-shrink:0;margin-left:5px;transition:background .15s;font-style:normal}
+.tip-wrap:hover .tip-icon{background:var(--blue);color:white}
+.tip-balloon{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);width:230px;background:var(--ink);color:var(--paper);border-radius:8px;padding:10px 13px;font-size:11px;line-height:1.6;font-weight:400;box-shadow:var(--shadow-lg);pointer-events:none;opacity:0;transition:opacity .18s;z-index:999;font-family:'DM Sans',sans-serif}
+.tip-balloon::before{content:'';position:absolute;right:100%;top:50%;transform:translateY(-50%);border:6px solid transparent;border-right-color:var(--ink)}
+.tip-balloon strong{color:#fbbf24}
+.tip-wrap:hover .tip-balloon{opacity:1}
+
+/* ── DASHBOARD ── */
+#dashboard{display:none}
+.dash-layout{display:grid;grid-template-columns:300px 1fr;min-height:calc(100vh - 96px)}
+.app.has-journey .dash-layout{min-height:calc(100vh - 152px)}
+.dash-sidebar{background:var(--cream);border-right:1px solid var(--border);padding:20px 16px;overflow-y:auto;overflow-x:visible;position:sticky;top:96px;max-height:calc(100vh - 96px)}
+.app.has-journey .dash-sidebar{top:152px;max-height:calc(100vh - 152px)}
+.sb-lbl{font-size:9px;font-weight:600;letter-spacing:1.8px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--border)}
+.sb-section{margin-bottom:20px}
+.ctx-pill{background:var(--white);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin-bottom:10px;font-size:12px}
+.ctx-pill-row{display:flex;justify-content:space-between;align-items:baseline}
+.ctx-pill-key{font-size:10px;color:var(--muted);font-weight:600}
+.ctx-pill-val{font-weight:600;font-size:12px}
+.m-tab{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:7px;cursor:pointer;border:1.5px solid transparent;background:transparent;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);transition:all .2s;text-align:left;width:100%;margin-bottom:5px;position:relative}
+.m-tab:hover{background:rgba(29,78,143,.06)}
+.m-tab.active{background:var(--ink);color:white}
+.t-icon{width:26px;height:26px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.m-tab.active .t-icon{background:rgba(255,255,255,.12)}
+.m-tab:not(.active) .t-icon{background:rgba(18,16,14,.07)}
+.t-name{font-weight:600;font-size:11px}
+.t-kind{font-size:10px;color:var(--muted);margin-top:1px}
+.m-tab.active .t-kind{color:rgba(255,255,255,.55)}
+.btn-run{width:100%;margin-top:6px;padding:11px;background:var(--blue);color:white;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:7px}
+.btn-run:hover{background:#163d72;transform:translateY(-1px);box-shadow:var(--shadow)}
+.ctrl-group{margin-bottom:14px}
+.ctrl-lbl-row{display:flex;align-items:center;margin-bottom:4px}
+.ctrl-lbl{font-size:10px;font-weight:600;color:var(--muted);letter-spacing:.3px}
+.ctrl-range{width:100%;accent-color:var(--blue)}
+.ctrl-range-row{display:flex;align-items:center;gap:8px}
+.ctrl-val{font-family:'DM Mono',monospace;font-size:12px;font-weight:500;color:var(--blue);min-width:34px;text-align:right}
+.ctrl-input{width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;background:white;font-family:'DM Mono',monospace;font-size:12px;color:var(--ink);outline:none;transition:border-color .2s}
+.ctrl-input:focus{border-color:var(--blue)}
+
+/* MAIN */
+.dash-main{padding:24px 28px;overflow-y:auto}
+.method-banner{background:var(--white);border:1.5px solid var(--border);border-left:4px solid var(--blue);border-radius:var(--r);padding:14px 18px;margin-bottom:20px;display:flex;gap:14px;align-items:flex-start}
+.mb-icon{font-size:26px;flex-shrink:0;margin-top:2px}
+.mb-title{font-family:'Fraunces',serif;font-size:17px;font-weight:700;margin-bottom:3px}
+.mb-desc{font-size:12px;color:var(--muted);line-height:1.5}
+.mb-tags{display:flex;gap:6px;margin-top:7px;flex-wrap:wrap}
+.mb-tag{font-size:9px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--cream);color:var(--muted);letter-spacing:.4px}
+.metrics-row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.metric-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--shadow-sm)}
+.metric-card.hi{border-color:var(--blue)}
+.mc-lbl2{font-size:9px;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px}
+.mc-val{font-family:'DM Mono',monospace;font-size:20px;font-weight:500}
+.metric-card.hi .mc-val{color:var(--blue)}
+.mc-sub{font-size:10px;color:var(--muted);margin-top:2px}
+.formula-box{background:#12100e;color:#e2e8f0;border-radius:var(--r);padding:14px 18px;margin-bottom:18px;font-family:'DM Mono',monospace;font-size:12px;line-height:1.9}
+.fb-title{color:#94a3b8;font-size:9px;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px;font-family:'DM Sans',sans-serif}
+.fv{color:#fbbf24}.fo{color:#818cf8}.fn{color:#34d399}.fc{color:#475569;font-style:italic}
+.chart-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:20px;margin-bottom:18px;box-shadow:var(--shadow-sm)}
+.cc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.cc-title{font-family:'Fraunces',serif;font-size:15px;font-weight:700}
+.cc-sub{font-size:11px;color:var(--muted);margin-top:2px}
+canvas{max-height:320px}
+.table-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);overflow:hidden;margin-bottom:18px;box-shadow:var(--shadow-sm)}
+.tc-header{padding:12px 18px;background:var(--cream);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.tc-title{font-weight:600;font-size:12px}
+table{width:100%;border-collapse:collapse}
+thead th{padding:9px 14px;text-align:left;font-size:9px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);background:var(--cream);border-bottom:1px solid var(--border)}
+tbody td{padding:9px 14px;font-size:12px;border-bottom:1px solid var(--border)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--cream)}
+.td-lbl{font-weight:600}
+.td-best{color:var(--green);font-weight:700}
+.td-mono{font-family:'DM Mono',monospace}
+.badge-best{background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:700}
+.badge-2nd{background:#fef3c7;color:#92400e;padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600}
+.badge-3rd{background:var(--cream);color:var(--muted);padding:2px 8px;border-radius:4px;font-size:9px;font-weight:600}
+.legend-box{display:flex;gap:16px;flex-wrap:wrap;margin-top:6px}
+.leg{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted)}
+.leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* MAPA VISUAL */
+.map-area{background:#f0f4fb;border:1.5px solid var(--border);border-radius:var(--r);position:relative;overflow:hidden;margin-bottom:18px}
+.map-canvas{width:100%;height:360px;display:block;cursor:crosshair}
+.map-legend{padding:10px 16px;border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap;background:var(--white)}
+
+/* DATA GRID */
+.data-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.data-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--r);padding:16px}
+.data-card-title{font-weight:700;font-size:12px;margin-bottom:12px;display:flex;align-items:center;gap:6px}
+.input-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:6px;align-items:center}
+.input-row label{font-size:10px;color:var(--muted);font-weight:600}
+.input-row input{padding:5px 8px;border:1.5px solid var(--border);border-radius:6px;font-family:'DM Mono',monospace;font-size:11px;text-align:right;outline:none;transition:border-color .2s}
+.input-row input:focus{border-color:var(--blue)}
+.input-header{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:4px}
+.input-header span{font-size:9px;font-weight:700;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+
+/* SPINNER */
+.spinner{display:inline-block;width:13px;height:13px;border:2px solid rgba(255,255,255,.35);border-top-color:white;border-radius:50%;animation:spin .55s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fade-in{animation:fadeIn .35s ease both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.empty-state{text-align:center;padding:60px 20px;color:var(--muted)}
+.empty-icon{font-size:44px;margin-bottom:12px}
+
+/* INSIGHT BOX */
+.insight-box{background:linear-gradient(135deg,#f0f4fb,#e8f4f0);border:1.5px solid #c0d4e8;border-radius:var(--r);padding:16px 20px;margin-bottom:18px}
+.insight-title{font-weight:700;font-size:13px;color:var(--blue);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.insight-text{font-size:12px;color:var(--ink);line-height:1.7}
+.insight-text strong{color:var(--blue)}
+
+@media(max-width:860px){.dash-layout{grid-template-columns:1fr}.metrics-row{grid-template-columns:repeat(2,1fr)}.data-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="topbar-left">
+      <img class="topbar-logo" src="https://institucional.ufrrj.br/ccs/files/2019/06/rural_logo01.png" alt="UFRRJ" onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+      <div class="topbar-logo-fallback">UFRRJ</div>
+      <div class="topbar-divider"></div>
+      <div>
+        <div class="topbar-title">APO Lab · Localização de instalações</div>
+        <div class="topbar-sub">Ambiente simulado de Produção e Operações</div>
+      </div>
+    </div>
+    <div class="topbar-right">
+      <button class="btn-restart" onclick="restartOnboarding()">↺ Reiniciar</button>
+    </div>
+  </div>
+  <div class="inst-bar">
+    <span>Universidade Federal Rural do Rio de Janeiro</span>
+    <span class="inst-sep">·</span>
+    <span>Curso de Administração · Campus Nova Iguaçu</span>
+    <span class="inst-sep">·</span>
+    <span>Baseado nas disciplinas da área de Produção e Operações</span>
+  </div>
+</header>
+
+<!-- BARRA DE JORNADA -->
+<div class="journey-bar" id="journeyBar">
+  <div class="jb-left">
+    <button class="jb-back" onclick="voltarApoLab()">← APO Lab</button>
+    <div class="jb-steps" id="jbSteps"></div>
+  </div>
+  <div class="jb-right">
+    <div class="jb-product" id="jbProduct"></div>
+    <button class="jb-nav-btn prev" onclick="irModulo('demanda')">← Previsão</button>
+    <button class="jb-nav-btn next-active" onclick="irModulo('modelo')">Modelo de Produção →</button>
+  </div>
+</div>
+
+<div class="app" id="appWrap">
+
+<!-- ONBOARDING -->
+<div id="onboarding">
+<div class="ob-card" id="obCard">
+
+  <!-- STEP 1: CONTEXTO -->
+  <div id="step1">
+    <div class="ob-step-label"><div class="ob-step-num">1</div>Etapa 1 de 2</div>
+    <div class="ob-title" id="step1Title">Onde instalar a fábrica?</div>
+    <div class="ob-subtitle">A decisão de localização é estratégica e de longo prazo: envolve custos de transporte, acesso a insumos, proximidade do mercado e fatores qualitativos. Escolha o método mais adequado ao seu contexto.</div>
+    <div class="ob-tip">
+      <strong>Como escolher o método?</strong> Se você tem dados de custos e volumes, prefira métodos quantitativos (custo-volume, centro de gravidade, carga-distância). Se os dados são escassos ou o problema envolve fatores subjetivos, use ponderação de fatores. Para novos produtos sem histórico, a ponderação é quase sempre o ponto de partida.
+    </div>
+    <div class="method-grid">
+      <div class="method-card" onclick="selectMethod('ponderacao',this)">
+        <div class="mc-icon">⚖️</div>
+        <div class="mc-name">Ponderação de Fatores</div>
+        <div class="mc-desc">Avalia localizações candidatas por fatores estratégicos com pesos. Ideal quando não há séries históricas e o problema envolve critérios qualitativos e quantitativos mistos.</div>
+        <div class="mc-tags"><span class="mc-tag tag-q">Qualitativo/Misto</span></div>
+        <div class="when-badge">✔ Sem dados históricos · Lançamentos</div>
+      </div>
+      <div class="method-card" onclick="selectMethod('custo',this)">
+        <div class="mc-icon">📊</div>
+        <div class="mc-name">Análise Custo-Volume</div>
+        <div class="mc-desc">Compara estruturas de custo fixo e variável de cada localização em função do volume produzido. Encontra o ponto de equilíbrio entre as alternativas.</div>
+        <div class="mc-tags"><span class="mc-tag tag-n">Quantitativo</span></div>
+        <div class="when-badge">✔ Quando se conhece a estrutura de custos</div>
+      </div>
+      <div class="method-card" onclick="selectMethod('gravidade',this)">
+        <div class="mc-icon">🗺️</div>
+        <div class="mc-name">Centro de Gravidade</div>
+        <div class="mc-desc">Encontra a localização que minimiza o custo total de transporte com base nas coordenadas geográficas e nos volumes de fornecedores e clientes.</div>
+        <div class="mc-tags"><span class="mc-tag tag-n">Quantitativo</span></div>
+        <div class="when-badge">✔ Otimização de transporte · Distribuição</div>
+      </div>
+      <div class="method-card" onclick="selectMethod('cargadist',this)">
+        <div class="mc-icon">🚚</div>
+        <div class="mc-name">Carga-Distância</div>
+        <div class="mc-desc">Calcula o somatório de carga × distância para cada localização candidata. Permite comparar alternativas predefinidas em termos de esforço logístico total.</div>
+        <div class="mc-tags"><span class="mc-tag tag-n">Quantitativo</span></div>
+        <div class="when-badge">✔ Comparação entre locais predefinidos</div>
+      </div>
+      <div class="method-card" onclick="selectMethod('breakeven',this)" style="grid-column:span 2">
+        <div class="mc-icon">📉</div>
+        <div class="mc-name">Break-Even Espacial</div>
+        <div class="mc-desc">Extensão do ponto de equilíbrio tradicional incorporando custos de frete e distância. Permite visualizar para qual volume cada localização é mais vantajosa economicamente.</div>
+        <div class="mc-tags"><span class="mc-tag tag-r">Quantitativo · Espacial</span></div>
+        <div class="when-badge">✔ Quando o frete é fator decisivo</div>
+      </div>
+    </div>
+    <div class="ob-nav">
+      <span></span>
+      <button class="btn-next" id="btnNext1" onclick="goStep(2)" disabled>Próximo →</button>
+    </div>
+  </div>
+
+  <!-- STEP 2: PRODUTO/CONFIRMAÇÃO -->
+  <div id="step2" style="display:none">
+    <div class="ob-step-label"><div class="ob-step-num">2</div>Etapa 2 de 2</div>
+    <div class="ob-title" id="step2title">Pronto para simular</div>
+    <div class="ob-subtitle" id="step2sub"></div>
+    <div class="ob-tip" id="step2tip"></div>
+    <div class="ob-nav">
+      <button class="btn-back-ob" onclick="goStep(1)">← Voltar</button>
+      <button class="btn-launch" onclick="launchDashboard()"><span>🚀</span> Iniciar Simulação</button>
+    </div>
+  </div>
+
+</div>
+</div><!-- onboarding -->
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="dash-layout">
+    <aside class="dash-sidebar">
+      <div class="sb-section">
+        <div class="sb-lbl">Contexto</div>
+        <div class="ctx-pill" id="ctxPill"></div>
+      </div>
+      <div class="sb-section">
+        <div class="sb-lbl">Método</div>
+        <div id="methodTabs"></div>
+      </div>
+      <div class="sb-section" id="paramSection"></div>
+      <button class="btn-run" onclick="runSimulation()" id="btnRun">
+        <span>▶</span> Calcular
+      </button>
+    </aside>
+    <main class="dash-main" id="dashMain">
+      <div class="empty-state fade-in">
+        <div class="empty-icon">📍</div>
+        <div>Configure os dados ao lado e clique em <strong>Calcular</strong></div>
+      </div>
+    </main>
+  </div>
+</div>
+
+</div><!-- app -->
+
+<script>
+// ── URL PARAMS ──
+const UP = new URLSearchParams(window.location.search);
+const URL_PRODUTO = UP.get('produto');
+const URL_ORIGEM  = UP.get('origem');
+const URL_VOLTAR  = UP.get('voltar');
+
+const JORNADA = [
+  {id:'demanda',icon:'📈',name:'Previsão',url:'https://apo-previsao.netlify.app'},
+  {id:'localizacao',icon:'📍',name:'Localização',url:'https://apo-localizacao.netlify.app'},
+  {id:'modelo',icon:'⚙️',name:'Modelo Prod.',url:'https://apo-producao.netlify.app'},
+  {id:'capacidade',icon:'⚡',name:'Capacidade',url:'https://apo-capacidade.netlify.app'},
+  {id:'arranjo',icon:'🏭',name:'Arranjo',url:'https://apo-arranjo.netlify.app'},
+  {id:'agregado',icon:'📋',name:'Pl. Agregado',url:null},
+  {id:'pmp',icon:'📅',name:'PMP',url:null},
+  {id:'mrp',icon:'🔩',name:'MRP',url:null},
+  {id:'sequencia',icon:'🗓️',name:'Sequen.',url:null},
+];
+
+const PRODUCT_NAMES = {isotonica:'🧃 Isotônica',sorvete:'🍦 Sorvete',farinha:'🌾 Farinha',farmaceutico:'💊 Medicamento',autoeletrico:'🚗 Automóvel Elétrico',projeto:'🏗️ Projeto'};
+
+// ── DADOS PRÉ-CARREGADOS POR PRODUTO ──
+const PRODUCT_DATA = {
+  isotonica:{
+    locais:['Duque de Caxias','Queimados','Campo Grande'],
+    fornecedores:[{nome:'Fornec. Sais',x:120,y:200,vol:400},{nome:'Fornec. Açúcar',x:300,y:80,vol:600},{nome:'Fornec. Embal.',x:500,y:300,vol:300}],
+    clientes:[{nome:'Zona Sul RJ',x:200,y:400,vol:800},{nome:'Zona Norte RJ',x:350,y:350,vol:600},{nome:'Baixada Flum.',x:250,y:250,vol:400}],
+    custos:[{local:'Duque de Caxias',fixo:180000,var:42},{local:'Queimados',fixo:120000,var:58},{local:'Campo Grande',fixo:150000,var:50}],
+    fatores:[
+      {fator:'Custo do terreno',peso:20,notas:[7,9,8]},
+      {fator:'Acesso a matérias-primas',peso:25,notas:[9,6,7]},
+      {fator:'Infraestrutura logística',peso:20,notas:[8,5,7]},
+      {fator:'Mão de obra disponível',peso:15,notas:[8,7,8]},
+      {fator:'Incentivos fiscais',peso:10,notas:[6,8,7]},
+      {fator:'Proximidade do mercado',peso:10,notas:[7,6,9]},
+    ]
+  },
+  sorvete:{
+    locais:['Nova Iguaçu','Seropédica','Itaguaí'],
+    fornecedores:[{nome:'Laticínios Sul',x:100,y:350,vol:500},{nome:'Fornec. Frutas',x:400,y:150,vol:300},{nome:'Fornec. Embal.',x:300,y:400,vol:200}],
+    clientes:[{nome:'Grande RJ',x:250,y:280,vol:700},{nome:'Interior RJ',x:450,y:300,vol:400},{nome:'Litoral',x:150,y:450,vol:300}],
+    custos:[{local:'Nova Iguaçu',fixo:160000,var:48},{local:'Seropédica',fixo:110000,var:62},{local:'Itaguaí',fixo:130000,var:55}],
+    fatores:[
+      {fator:'Custo do terreno',peso:20,notas:[6,9,8]},
+      {fator:'Acesso à cadeia fria',peso:30,notas:[8,5,7]},
+      {fator:'Infraestrutura logística',peso:20,notas:[7,5,8]},
+      {fator:'Mão de obra disponível',peso:15,notas:[8,6,7]},
+      {fator:'Incentivos fiscais',peso:15,notas:[5,9,7]},
+    ]
+  },
+  farinha:{
+    locais:['Campos dos Goytacazes','Três Rios','Volta Redonda'],
+    fornecedores:[{nome:'Fazenda Trigo A',x:500,y:100,vol:800},{nome:'Fazenda Trigo B',x:400,y:200,vol:600},{nome:'Cooperativa',x:350,y:400,vol:400}],
+    clientes:[{nome:'Distribuid. RJ',x:200,y:350,vol:900},{nome:'Distribuid. SP',x:450,y:400,vol:500},{nome:'Padarias Região',x:300,y:300,vol:300}],
+    custos:[{local:'Campos',fixo:200000,var:35},{local:'Três Rios',fixo:160000,var:44},{local:'Volta Redonda',fixo:175000,var:40}],
+    fatores:[
+      {fator:'Proximidade ao trigo',peso:35,notas:[9,7,6]},
+      {fator:'Custo do terreno',peso:15,notas:[9,7,6]},
+      {fator:'Infraestrutura logística',peso:25,notas:[6,8,9]},
+      {fator:'Energia elétrica',peso:15,notas:[7,8,9]},
+      {fator:'Mão de obra',peso:10,notas:[8,7,7]},
+    ]
+  },
+  farmaceutico:{
+    locais:['Nova Iguaçu','Queimados','Duque de Caxias'],
+    fornecedores:[{nome:'Fornec. Insumos SP',x:400,y:150,vol:500},{nome:'Fornec. Embalagens',x:300,y:300,vol:300},{nome:'Fornec. API',x:500,y:250,vol:400}],
+    clientes:[{nome:'Distribuidoras RJ',x:250,y:350,vol:600},{nome:'Farmácias',x:350,y:280,vol:400},{nome:'Hospitais',x:150,y:380,vol:300}],
+    custos:[{local:'Nova Iguaçu',fixo:140000,var:52},{local:'Queimados',fixo:100000,var:65},{local:'Duque de Caxias',fixo:160000,var:45}],
+    fatores:[
+      {fator:'Custo do terreno',peso:20,notas:[6,8,5]},
+      {fator:'Acesso a insumos regulados',peso:25,notas:[7,5,8]},
+      {fator:'Infraestrutura logística',peso:20,notas:[8,6,9]},
+      {fator:'Mão de obra especializada',peso:20,notas:[7,5,6]},
+      {fator:'Incentivos fiscais',peso:15,notas:[5,9,7]},
+    ]
+  },
+  autoeletrico:{
+    locais:['Porto Real (RJ)','São José dos Campos (SP)','Betim (MG)'],
+    fornecedores:[{nome:'Fornec. Baterias',x:200,y:150,vol:800},{nome:'Fornec. Componentes Eletr.',x:450,y:200,vol:600},{nome:'Fornec. Aço/Alumínio',x:300,y:350,vol:500}],
+    clientes:[{nome:'Concessionárias Sul/SE',x:250,y:400,vol:700},{nome:'Concessionárias Norte/NE',x:400,y:100,vol:400},{nome:'Frotas Corporativas',x:350,y:280,vol:300}],
+    custos:[{local:'Porto Real',fixo:4500000,var:1200},{local:'São José dos Campos',fixo:5200000,var:1050},{local:'Betim',fixo:4800000,var:1100}],
+    fatores:[
+      {fator:'Incentivos fiscais estaduais',peso:25,notas:[9,6,8]},
+      {fator:'Infraestrutura logística',peso:20,notas:[7,9,8]},
+      {fator:'Mão de obra qualificada',peso:20,notas:[7,9,8]},
+      {fator:'Proximidade de fornecedores',peso:15,notas:[7,8,9]},
+      {fator:'Custo do terreno/instalação',peso:10,notas:[8,6,7]},
+      {fator:'Acesso a energia renovável',peso:10,notas:[8,7,7]},
+    ]
+  },
+  projeto:{
+    locais:['Centro RJ','Barra da Tijuca','Niterói'],
+    fornecedores:[{nome:'Depósito Mat. A',x:150,y:200,vol:600},{nome:'Depósito Mat. B',x:400,y:150,vol:400},{nome:'Fornec. Equipamentos',x:300,y:350,vol:200}],
+    clientes:[{nome:'Zona Sul',x:200,y:400,vol:300},{nome:'Zona Oeste',x:100,y:300,vol:200},{nome:'Região Oceânica',x:500,y:350,vol:150}],
+    custos:[{local:'Centro RJ',fixo:300000,var:80},{local:'Barra da Tijuca',fixo:250000,var:95},{local:'Niterói',fixo:200000,var:70}],
+    fatores:[
+      {fator:'Acesso ao canteiro',peso:30,notas:[9,7,6]},
+      {fator:'Custo do escritório',peso:20,notas:[5,7,9]},
+      {fator:'Infraestrutura digital',peso:15,notas:[9,8,7]},
+      {fator:'Disponibilidade de engenheiros',peso:25,notas:[9,7,7]},
+      {fator:'Imagem corporativa',peso:10,notas:[8,9,7]},
+    ]
+  }
+};
+let STATE = {method:null, product: URL_PRODUTO||'isotonica'};
+let chartInst = null;
+
+// ── JOURNEY BAR ──
+function initJourneyBar() {
+  const bar = document.getElementById('journeyBar');
+  bar.style.display = 'flex';
+  document.getElementById('appWrap').classList.add('has-journey');
+  const stepsEl = document.getElementById('jbSteps');
+  JORNADA.forEach((s,i) => {
+    const div = document.createElement('div');
+    div.className = 'jb-step' + (s.id==='localizacao'?' current':i===0?' done':'');
+    div.innerHTML = `<span class="jb-step-icon">${s.icon}</span>${s.name}`;
+    if(s.url) div.classList.add('clickable');
+    div.onclick = () => { if(s.url) irModulo(s.id); };
+    stepsEl.appendChild(div);
+    if(i<JORNADA.length-1){const a=document.createElement('span');a.style.cssText='font-size:9px;color:#2a2520;padding:0 1px;flex-shrink:0';a.textContent='›';stepsEl.appendChild(a);}
+  });
+  if(URL_PRODUTO) document.getElementById('jbProduct').textContent = PRODUCT_NAMES[URL_PRODUTO]||URL_PRODUTO;
+}
+
+function voltarApoLab(){window.location.href = URL_VOLTAR||'https://apolab-ufrrj.netlify.app';}
+function irModulo(mod){
+  const base = JORNADA.find(j=>j.id===mod)?.url;
+  if(!base){alert('Módulo ainda em desenvolvimento!');return;}
+  const p=new URLSearchParams({produto:STATE.product,modulo:mod,origem:'apolab',voltar:URL_VOLTAR||window.location.href});
+  window.open(`${base}?${p.toString()}`,'_blank');
+}
+
+// ── ONBOARDING ──
+function tip(text){return `<span class="tip-wrap"><i class="tip-icon">?</i><span class="tip-balloon">${text}</span></span>`;}
+
+function selectMethod(key, el){
+  STATE.method = key;
+  document.querySelectorAll('.method-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  document.getElementById('btnNext1').disabled = false;
+}
+
+const METHOD_INFO = {
+  ponderacao:{name:'Ponderação de Fatores',icon:'⚖️',
+    tip:'Cada fator recebe um peso (%) e cada local recebe uma nota (0–10). A pontuação final é o somatório de peso × nota. O local com maior pontuação é o mais indicado.',
+    quando:'Recomendado quando não há dados históricos suficientes ou quando fatores qualitativos são determinantes na decisão.'},
+  custo:{name:'Análise Custo-Volume',icon:'📊',
+    tip:'Cada local tem um custo fixo (CF) e um custo variável unitário (CV). O custo total para um volume Q é CF + CV×Q. O melhor local é o de menor custo total para o volume esperado.',
+    quando:'Recomendado quando a estrutura de custos das alternativas é conhecida e o volume de produção é estimável.'},
+  gravidade:{name:'Centro de Gravidade',icon:'🗺️',
+    tip:'A localização ótima é calculada pela média ponderada das coordenadas de fornecedores e clientes, ponderada pelos volumes movimentados. Minimiza o custo total de transporte.',
+    quando:'Recomendado para otimizar a localização de um centro de distribuição ou fábrica em relação a múltiplos pontos de origem e destino.'},
+  cargadist:{name:'Carga-Distância',icon:'🚚',
+    tip:'Para cada local candidato, calcula-se Σ(carga × distância) em relação a todos os pontos de origem e destino. O local com menor índice CD é o mais eficiente logisticamente.',
+    quando:'Recomendado quando há locais candidatos predefinidos e se deseja comparar o esforço logístico total de cada alternativa.'},
+  breakeven:{name:'Break-Even Espacial',icon:'📉',
+    tip:'Combina custos fixos, variáveis e de frete por distância. Para cada volume, calcula o custo total de cada local. O ponto de cruzamento das curvas indica o volume a partir do qual um local é mais vantajoso.',
+    quando:'Recomendado quando o custo de transporte é fator relevante e o volume de produção pode variar significativamente.'},
+};
+
+function goStep(n){
+  [1,2].forEach(i=>document.getElementById('step'+i).style.display=i===n?'block':'none');
+  if(n===2) buildStep2();
+  document.getElementById('onboarding').scrollTo({top:0,behavior:'smooth'});
+}
+
+function buildStep2(){
+  const m = METHOD_INFO[STATE.method];
+  document.getElementById('step2title').textContent = `Método escolhido: ${m.name}`;
+  document.getElementById('step2sub').textContent = m.quando;
+  document.getElementById('step2tip').innerHTML = `<strong>Como funciona:</strong> ${m.tip}`;
+}
+
+function launchDashboard(){
+  document.getElementById('onboarding').style.display='none';
+  document.getElementById('dashboard').style.display='block';
+  buildDashboard();
+}
+
+function restartOnboarding(){
+  STATE.method=null;
+  document.getElementById('dashboard').style.display='none';
+  document.getElementById('onboarding').style.display='flex';
+  document.querySelectorAll('.method-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('btnNext1').disabled=true;
+  goStep(1);
+}
+
+// ── DASHBOARD ──
+function buildDashboard(){
+  const m = METHOD_INFO[STATE.method];
+  const pd = PRODUCT_DATA[STATE.product] || PRODUCT_DATA['isotonica'];
+  document.getElementById('ctxPill').innerHTML = `
+    <div class="ctx-pill-row"><span class="ctx-pill-key">Produto</span><span class="ctx-pill-val">${PRODUCT_NAMES[STATE.product]||STATE.product}</span></div>
+    <div class="ctx-pill-row"><span class="ctx-pill-key">Método</span><span class="ctx-pill-val">${m.icon} ${m.name}</span></div>
+    <div class="ctx-pill-row"><span class="ctx-pill-key">Locais candidatos</span><span class="ctx-pill-val">${pd.locais.length}</span></div>`;
+
+  // method tabs
+  const tabs = document.getElementById('methodTabs');
+  tabs.innerHTML = '';
+  Object.entries(METHOD_INFO).forEach(([k,v])=>{
+    const btn = document.createElement('button');
+    btn.className = 'm-tab' + (k===STATE.method?' active':'');
+    btn.innerHTML = `<div class="t-icon">${v.icon}</div><div><div class="t-name">${v.name}${tip(v.tip)}</div><div class="t-kind">${k==='ponderacao'?'Qualitativo/Misto':'Quantitativo'}</div></div>`;
+    btn.onclick = ()=>{
+      STATE.method=k;
+      document.querySelectorAll('.m-tab').forEach(t=>t.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('ctxPill').querySelector('.ctx-pill-val:last-child') && null;
+      buildDashboard();
+    };
+    tabs.appendChild(btn);
+  });
+
+  buildParamSection();
+}
+
+function buildParamSection(){
+  const pd = PRODUCT_DATA[STATE.product] || PRODUCT_DATA['isotonica'];
+  const el = document.getElementById('paramSection');
+  el.innerHTML = `<div class="sb-lbl">Dados de entrada</div><div style="font-size:11px;color:var(--muted);margin-bottom:10px">Os dados abaixo são pré-carregados para o produto selecionado. Você pode editá-los antes de calcular.</div>`;
+
+  if(STATE.method==='ponderacao'){
+    let html=`<div style="max-height:220px;overflow-y:auto">`;
+    pd.fatores.forEach((f,i)=>{
+      html+=`<div style="margin-bottom:8px;background:white;border:1px solid var(--border);border-radius:6px;padding:8px 10px">
+        <div style="font-size:10px;font-weight:700;margin-bottom:4px">${f.fator} <span style="color:var(--blue);font-family:'DM Mono',monospace">(peso: ${f.peso}%)</span></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px">
+          ${pd.locais.map((l,j)=>`<div style="font-size:9px;color:var(--muted)">${l}<br><input id="pf_${i}_${j}" type="number" class="ctrl-input" style="width:100%;padding:3px 6px;font-size:11px" min="0" max="10" step="0.5" value="${f.notas[j]}"></div>`).join('')}
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+    el.innerHTML += html;
+  }
+  else if(STATE.method==='custo'){
+    let html=`<div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:6px">Custo fixo (R$/mês) e variável (R$/un.)</div>`;
+    pd.custos.forEach((c,i)=>{
+      html+=`<div style="background:white;border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:6px">
+        <div style="font-size:10px;font-weight:700;margin-bottom:4px">${c.local}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div><div style="font-size:9px;color:var(--muted)">Custo Fixo (R$)</div><input id="cf_${i}" type="number" class="ctrl-input" value="${c.fixo}" step="1000"></div>
+          <div><div style="font-size:9px;color:var(--muted)">Custo Var. (R$/un.)</div><input id="cv_${i}" type="number" class="ctrl-input" value="${c.var}" step="1"></div>
+        </div>
+      </div>`;
+    });
+    html+=`<div style="margin-top:8px"><div style="font-size:9px;color:var(--muted);font-weight:600;margin-bottom:4px">Volume de análise (un./mês)</div><input id="vol_analise" type="number" class="ctrl-input" value="5000" step="500"></div>`;
+    el.innerHTML += html;
+  }
+  else if(STATE.method==='gravidade'||STATE.method==='cargadist'){
+    el.innerHTML += `<div style="font-size:10px;color:var(--muted);line-height:1.5">Os pontos de fornecedores e clientes estão pré-carregados no mapa. Você pode ajustar os volumes abaixo.</div>
+    <div style="margin-top:8px;max-height:200px;overflow-y:auto">
+      ${[...pd.fornecedores,...pd.clientes].map((p,i)=>`
+        <div style="display:flex;justify-content:space-between;align-items:center;background:white;border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-bottom:4px">
+          <span style="font-size:10px;font-weight:600">${p.nome}</span>
+          <div><span style="font-size:9px;color:var(--muted)">Vol.: </span><input id="pvol_${i}" type="number" class="ctrl-input" style="width:70px;padding:3px 6px;font-size:11px" value="${p.vol}" step="50"></div>
+        </div>`).join('')}
+    </div>`;
+    if(STATE.method==='cargadist'){
+      el.innerHTML += `<div style="margin-top:10px"><div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:4px">Locais candidatos (coordenadas)</div>
+        ${pd.locais.map((l,i)=>{
+          const xs=[120,280,440][i]; const ys=[280,180,320][i];
+          return `<div style="background:white;border:1px solid var(--border);border-radius:6px;padding:6px 10px;margin-bottom:4px">
+            <div style="font-size:10px;font-weight:700">${l}</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:4px">
+              <div><span style="font-size:9px;color:var(--muted)">X: </span><input id="lx_${i}" type="number" class="ctrl-input" style="padding:3px 6px;font-size:11px" value="${xs}"></div>
+              <div><span style="font-size:9px;color:var(--muted)">Y: </span><input id="ly_${i}" type="number" class="ctrl-input" style="padding:3px 6px;font-size:11px" value="${ys}"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+  }
+  else if(STATE.method==='breakeven'){
+    let html=`<div style="font-size:10px;font-weight:600;color:var(--muted);margin-bottom:6px">Custo fixo, variável e frete por km</div>`;
+    pd.custos.forEach((c,i)=>{
+      const dist=[0,150,280][i];
+      html+=`<div style="background:white;border:1px solid var(--border);border-radius:6px;padding:8px 10px;margin-bottom:6px">
+        <div style="font-size:10px;font-weight:700;margin-bottom:4px">${c.local}</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px">
+          <div><div style="font-size:9px;color:var(--muted)">CF (R$)</div><input id="bef_${i}" type="number" class="ctrl-input" style="padding:3px 6px;font-size:11px" value="${c.fixo}" step="1000"></div>
+          <div><div style="font-size:9px;color:var(--muted)">CV (R$/un.)</div><input id="bev_${i}" type="number" class="ctrl-input" style="padding:3px 6px;font-size:11px" value="${c.var}" step="1"></div>
+          <div><div style="font-size:9px;color:var(--muted)">Dist. (km)</div><input id="bed_${i}" type="number" class="ctrl-input" style="padding:3px 6px;font-size:11px" value="${dist}" step="10"></div>
+        </div>
+      </div>`;
+    });
+    html+=`<div style="margin-top:6px"><div style="font-size:9px;color:var(--muted);font-weight:600;margin-bottom:4px">Custo de frete (R$/un./km)</div><input id="frete_km" type="number" class="ctrl-input" value="0.15" step="0.01"></div>`;
+    el.innerHTML += html;
+  }
+}
+
+// ── ALGORITMOS ──
+function runSimulation(){
+  const btn=document.getElementById('btnRun');
+  btn.innerHTML='<span class="spinner"></span> Calculando...';
+  btn.disabled=true;
+  setTimeout(()=>{doCalc();btn.innerHTML='<span>▶</span> Calcular';btn.disabled=false;},350);
+}
+
+function doCalc(){
+  const pd = PRODUCT_DATA[STATE.product]||PRODUCT_DATA['isotonica'];
+  if(STATE.method==='ponderacao') calcPonderacao(pd);
+  else if(STATE.method==='custo') calcCusto(pd);
+  else if(STATE.method==='gravidade') calcGravidade(pd);
+  else if(STATE.method==='cargadist') calcCargaDist(pd);
+  else if(STATE.method==='breakeven') calcBreakeven(pd);
+}
+
+// 1. PONDERAÇÃO
+function calcPonderacao(pd){
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  const scores = pd.locais.map((_,j)=>{
+    let s=0;
+    pd.fatores.forEach((f,i)=>{
+      const nota=parseFloat(document.getElementById(`pf_${i}_${j}`)?.value||f.notas[j]);
+      s += (f.peso/100)*nota;
+    });
+    return Math.round(s*100)/100;
+  });
+  const best=scores.indexOf(Math.max(...scores));
+  const rank=s=>s===Math.max(...scores)?'badge-best':s===Math.min(...scores)?'badge-3rd':'badge-2nd';
+  const rankLabel=s=>s===Math.max(...scores)?'🥇 Melhor':s===Math.min(...scores)?'🥉 Pior':'🥈 2º lugar';
+
+  const rows=pd.fatores.map((f,i)=>`<tr>
+    <td class="td-lbl">${f.fator}</td>
+    <td class="td-mono" style="text-align:center">${f.peso}%</td>
+    ${pd.locais.map((_,j)=>{
+      const n=parseFloat(document.getElementById(`pf_${i}_${j}`)?.value||f.notas[j]);
+      const contrib=(f.peso/100*n).toFixed(2);
+      return `<td class="td-mono" style="text-align:center">${n.toFixed(1)} <span style="color:var(--muted);font-size:9px">(${contrib})</span></td>`;
+    }).join('')}
+  </tr>`).join('');
+
+  const colors=['#1d4e8f','#1a7a5e','#b8860b','#bf4020','#6b3fa0'];
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">⚖️</div><div>
+      <div class="mb-title">Ponderação de Fatores</div>
+      <div class="mb-desc">Cada fator tem um peso estratégico (%). Cada local recebe uma nota de 0 a 10 por fator. A pontuação final é o somatório de (peso × nota) para todos os fatores.</div>
+      <div class="mb-tags"><span class="mb-tag">Qualitativo/Misto</span><span class="mb-tag">${pd.locais.length} locais candidatos</span><span class="mb-tag">${pd.fatores.length} fatores avaliados</span></div>
+    </div></div>
+
+    <div class="metrics-row" style="grid-template-columns:repeat(${pd.locais.length},1fr)">
+      ${pd.locais.map((l,j)=>`<div class="metric-card${j===best?' hi':''}">
+        <div class="mc-lbl2">${l}</div>
+        <div class="mc-val">${scores[j].toFixed(2)}</div>
+        <div class="mc-sub"><span class="${rank(scores[j])}">${rankLabel(scores[j])}</span></div>
+      </div>`).join('')}
+    </div>
+
+    <div class="formula-box">
+      <div class="fb-title">Fórmula</div>
+      <span class="fv">Pontuação<sub>j</sub></span> <span class="fo">=</span> <span class="fo">Σ</span> <span class="fo">(</span><span class="fv">Peso<sub>i</sub></span> <span class="fo">×</span> <span class="fv">Nota<sub>ij</sub></span><span class="fo">)</span>
+      <br><span class="fc">// i = fator; j = local candidato; Peso em % (soma = 100%); Nota de 0 a 10</span>
+    </div>
+
+    <div class="insight-box">
+      <div class="insight-title">💡 Interpretação</div>
+      <div class="insight-text">
+        O local <strong>${pd.locais[best]}</strong> obteve a maior pontuação ponderada (<strong>${scores[best].toFixed(2)} pontos</strong>), sendo a localização mais indicada com base nos critérios definidos.
+        ${best!==scores.indexOf(Math.min(...scores))?`O local <strong>${pd.locais[scores.indexOf(Math.min(...scores))]}</strong> ficou em último lugar com ${Math.min(...scores).toFixed(2)} pontos.`:''}
+        Lembre-se: alterar os pesos dos fatores pode mudar completamente o resultado, o que é uma ferramenta útil para análise de sensibilidade.
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="cc-header"><div><div class="cc-title">Pontuação ponderada por local</div><div class="cc-sub">Quanto maior, mais indicado o local</div></div></div>
+      <canvas id="mainChart"></canvas>
+    </div>
+
+    <div class="table-card">
+      <div class="tc-header"><div class="tc-title">Tabela detalhada: peso × nota por fator</div><div style="font-size:10px;color:var(--muted)">Valor entre parênteses = contribuição do fator à pontuação total</div></div>
+      <table>
+        <thead><tr><th>Fator</th><th>Peso (%)</th>${pd.locais.map(l=>`<th>${l}</th>`).join('')}</tr></thead>
+        <tbody>
+          ${rows}
+          <tr style="background:var(--cream);font-weight:700">
+            <td class="td-lbl">TOTAL</td><td class="td-mono" style="text-align:center">100%</td>
+            ${scores.map((s,j)=>`<td class="td-mono${j===best?' td-best':''}" style="text-align:center">${s.toFixed(2)}</td>`).join('')}
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  chartInst=new Chart(ctx,{
+    type:'bar',
+    data:{labels:pd.locais,datasets:[{label:'Pontuação ponderada',data:scores,backgroundColor:pd.locais.map((_,j)=>j===best?'rgba(26,122,94,.85)':'rgba(29,78,143,.6)'),borderRadius:6,borderWidth:0}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>`Pontuação: ${c.raw.toFixed(2)}`}}},scales:{y:{beginAtZero:true,max:10,grid:{color:'#e2dcd0'},ticks:{font:{family:'DM Mono',size:10}}},x:{grid:{display:false},ticks:{font:{family:'DM Sans',size:11}}}}}
+  });
+}
+
+// 2. CUSTO-VOLUME
+function calcCusto(pd){
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  const vol=parseInt(document.getElementById('vol_analise')?.value||5000);
+  const custos=pd.custos.map((c,i)=>({
+    local:c.local,
+    cf:parseFloat(document.getElementById(`cf_${i}`)?.value||c.fixo),
+    cv:parseFloat(document.getElementById(`cv_${i}`)?.value||c.var),
+  }));
+  const totais=custos.map(c=>c.cf+c.cv*vol);
+  const best=totais.indexOf(Math.min(...totais));
+  const vols=Array.from({length:50},(_,i)=>i*200+200);
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">📊</div><div>
+      <div class="mb-title">Análise Custo-Volume</div>
+      <div class="mb-desc">Cada localização tem uma estrutura de custos diferente. O custo total = Custo Fixo + (Custo Variável × Volume). Para o volume de produção esperado, o local com menor custo total é o mais indicado.</div>
+      <div class="mb-tags"><span class="mb-tag">Quantitativo</span><span class="mb-tag">Volume analisado: ${vol.toLocaleString('pt-BR')} un.</span></div>
+    </div></div>
+
+    <div class="metrics-row" style="grid-template-columns:repeat(${custos.length},1fr)">
+      ${custos.map((c,j)=>`<div class="metric-card${j===best?' hi':''}">
+        <div class="mc-lbl2">${c.local}</div>
+        <div class="mc-val">R$ ${(totais[j]/1000).toFixed(0)}k</div>
+        <div class="mc-sub"><span class="${j===best?'badge-best':j===totais.indexOf(Math.max(...totais))?'badge-3rd':'badge-2nd'}">${j===best?'🥇 Menor custo':j===totais.indexOf(Math.max(...totais))?'🥉 Maior custo':'🥈 2º lugar'}</span></div>
+      </div>`).join('')}
+    </div>
+
+    <div class="formula-box">
+      <div class="fb-title">Fórmula</div>
+      <span class="fv">CT<sub>j</sub></span> <span class="fo">=</span> <span class="fv">CF<sub>j</sub></span> <span class="fo">+</span> <span class="fv">CV<sub>j</sub></span> <span class="fo">×</span> <span class="fv">Q</span>
+      <br><span class="fc">// CT = custo total; CF = custo fixo; CV = custo variável unitário; Q = volume produzido</span>
+    </div>
+
+    <div class="insight-box">
+      <div class="insight-title">💡 Interpretação</div>
+      <div class="insight-text">
+        Para um volume de <strong>${vol.toLocaleString('pt-BR')} unidades/mês</strong>, o local <strong>${custos[best].local}</strong> apresenta o menor custo total: <strong>R$ ${totais[best].toLocaleString('pt-BR')}</strong>.
+        Locais com custo fixo alto e variável baixo são mais vantajosos em <em>grandes</em> volumes. Locais com custo fixo baixo e variável alto são melhores em <em>pequenos</em> volumes.
+        Observe o gráfico para identificar os pontos de cruzamento entre as curvas.
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="cc-header"><div><div class="cc-title">Custo total × Volume produzido</div><div class="cc-sub">Observe onde as linhas se cruzam: esses são os pontos de indiferença entre locais</div></div></div>
+      <canvas id="mainChart"></canvas>
+    </div>
+
+    <div class="table-card">
+      <div class="tc-header"><div class="tc-title">Estrutura de custos e custo total para ${vol.toLocaleString('pt-BR')} un.</div></div>
+      <table><thead><tr><th>Local</th><th>Custo Fixo (R$)</th><th>Custo Var. (R$/un.)</th><th>Custo Total (R$)</th><th>Classificação</th></tr></thead>
+      <tbody>${custos.map((c,j)=>`<tr><td class="td-lbl">${c.local}</td><td class="td-mono">R$ ${c.cf.toLocaleString('pt-BR')}</td><td class="td-mono">R$ ${c.cv.toFixed(2)}</td><td class="td-mono${j===best?' td-best':''} ">R$ ${totais[j].toLocaleString('pt-BR')}</td><td><span class="${j===best?'badge-best':j===totais.indexOf(Math.max(...totais))?'badge-3rd':'badge-2nd'}">${j===best?'🥇 Melhor':j===totais.indexOf(Math.max(...totais))?'Maior custo':'2º lugar'}</span></td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+
+  const colors=['#1d4e8f','#1a7a5e','#b8860b'];
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  chartInst=new Chart(ctx,{
+    type:'line',
+    data:{labels:vols,datasets:custos.map((c,j)=>({label:c.local,data:vols.map(v=>c.cf+c.cv*v),borderColor:colors[j],borderWidth:2,pointRadius:0,tension:.2,fill:false}))},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'top',labels:{font:{family:'DM Mono',size:10}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: R$ ${Math.round(c.raw).toLocaleString('pt-BR')}`}}},
+      scales:{x:{title:{display:true,text:'Volume (unidades)',font:{family:'DM Sans',size:10}},ticks:{font:{family:'DM Mono',size:9},callback:v=>vols[v]?.toLocaleString('pt-BR')||v,maxTicksLimit:10}},
+        y:{title:{display:true,text:'Custo Total (R$)',font:{family:'DM Sans',size:10}},ticks:{font:{family:'DM Mono',size:9},callback:v=>`R$ ${(v/1000).toFixed(0)}k`}}}}
+  });
+}
+
+// 3. CENTRO DE GRAVIDADE
+function calcGravidade(pd){
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  const points=[...pd.fornecedores,...pd.clientes];
+  const vols=points.map((_,i)=>parseFloat(document.getElementById(`pvol_${i}`)?.value||points[i].vol));
+  const totalVol=vols.reduce((a,b)=>a+b,0);
+  const cx=vols.reduce((s,v,i)=>s+v*points[i].x,0)/totalVol;
+  const cy=vols.reduce((s,v,i)=>s+v*points[i].y,0)/totalVol;
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">🗺️</div><div>
+      <div class="mb-title">Centro de Gravidade</div>
+      <div class="mb-desc">Encontra a localização ótima que minimiza os custos totais de transporte, calculando a média ponderada das coordenadas de todos os pontos de origem e destino pelos seus volumes.</div>
+      <div class="mb-tags"><span class="mb-tag">Quantitativo</span><span class="mb-tag">${pd.fornecedores.length} fornecedores</span><span class="mb-tag">${pd.clientes.length} clientes</span></div>
+    </div></div>
+
+    <div class="metrics-row">
+      <div class="metric-card hi"><div class="mc-lbl2">Coordenada X ótima</div><div class="mc-val">${cx.toFixed(1)}</div><div class="mc-sub">Posição longitudinal</div></div>
+      <div class="metric-card hi"><div class="mc-lbl2">Coordenada Y ótima</div><div class="mc-val">${cy.toFixed(1)}</div><div class="mc-sub">Posição latitudinal</div></div>
+      <div class="metric-card"><div class="mc-lbl2">Volume total</div><div class="mc-val">${totalVol.toLocaleString('pt-BR')}</div><div class="mc-sub">unidades consideradas</div></div>
+    </div>
+
+    <div class="formula-box">
+      <div class="fb-title">Fórmulas</div>
+      <span class="fv">X*</span> <span class="fo">=</span> <span class="fo">Σ(</span><span class="fv">V<sub>i</sub></span> <span class="fo">×</span> <span class="fv">X<sub>i</sub></span><span class="fo">)</span> <span class="fo">/</span> <span class="fo">Σ</span><span class="fv">V<sub>i</sub></span>
+      <br><span class="fv">Y*</span> <span class="fo">=</span> <span class="fo">Σ(</span><span class="fv">V<sub>i</sub></span> <span class="fo">×</span> <span class="fv">Y<sub>i</sub></span><span class="fo">)</span> <span class="fo">/</span> <span class="fo">Σ</span><span class="fv">V<sub>i</sub></span>
+      <br><span class="fc">// V = volume; X, Y = coordenadas; * = ponto ótimo de localização</span>
+    </div>
+
+    <div class="insight-box">
+      <div class="insight-title">💡 Interpretação</div>
+      <div class="insight-text">
+        O ponto ótimo de localização está nas coordenadas <strong>(${cx.toFixed(1)}, ${cy.toFixed(1)})</strong>. No mapa, este ponto é representado pela estrela vermelha.
+        Na prática, a fábrica deve ser instalada o mais próximo possível dessas coordenadas, considerando disponibilidade de terreno, zoneamento e infraestrutura local.
+        Pontos com maior volume têm mais "peso" e puxam o centro de gravidade em sua direção.
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="cc-header"><div><div class="cc-title">Mapa de pontos e centro de gravidade</div><div class="cc-sub">🔵 Fornecedores · 🟢 Clientes · ⭐ Ponto ótimo</div></div></div>
+      <canvas id="mainChart" style="max-height:380px"></canvas>
+    </div>
+
+    <div class="table-card">
+      <div class="tc-header"><div class="tc-title">Pontos utilizados no cálculo</div></div>
+      <table><thead><tr><th>Ponto</th><th>Tipo</th><th>X</th><th>Y</th><th>Volume</th><th>V×X</th><th>V×Y</th></tr></thead>
+      <tbody>
+        ${points.map((p,i)=>`<tr><td class="td-lbl">${p.nome}</td><td>${i<pd.fornecedores.length?'Fornecedor':'Cliente'}</td><td class="td-mono">${p.x}</td><td class="td-mono">${p.y}</td><td class="td-mono">${vols[i].toLocaleString('pt-BR')}</td><td class="td-mono">${(vols[i]*p.x).toLocaleString('pt-BR')}</td><td class="td-mono">${(vols[i]*p.y).toLocaleString('pt-BR')}</td></tr>`).join('')}
+        <tr style="background:var(--cream);font-weight:700"><td colspan="4">Centro de Gravidade</td><td class="td-mono">${totalVol.toLocaleString('pt-BR')}</td><td class="td-mono td-best">${cx.toFixed(1)}</td><td class="td-mono td-best">${cy.toFixed(1)}</td></tr>
+      </tbody></table>
+    </div>
+  </div>`;
+
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  chartInst=new Chart(ctx,{
+    type:'scatter',
+    data:{datasets:[
+      {label:'Fornecedores',data:pd.fornecedores.map(p=>({x:p.x,y:p.y})),backgroundColor:'rgba(29,78,143,.8)',pointRadius:pd.fornecedores.map((_,i)=>Math.max(6,vols[i]/80)),pointStyle:'circle'},
+      {label:'Clientes',data:pd.clientes.map(p=>({x:p.x,y:p.y})),backgroundColor:'rgba(26,122,94,.8)',pointRadius:pd.clientes.map((_,i)=>Math.max(6,vols[pd.fornecedores.length+i]/80)),pointStyle:'circle'},
+      {label:'⭐ Centro de Gravidade',data:[{x:cx,y:cy}],backgroundColor:'#bf4020',borderColor:'#ff6b40',borderWidth:2,pointRadius:18,pointHoverRadius:22,pointStyle:'star'},
+    ]},
+    plugins:[{
+      id:'pulseGravity',
+      afterDraw(chart){
+        const ds=chart.data.datasets.findIndex(d=>d.label&&d.label.includes('Centro de Gravidade'));
+        if(ds<0)return;
+        const meta=chart.getDatasetMeta(ds);
+        if(!meta.data||!meta.data[0])return;
+        const pt=meta.data[0];
+        const ctx2=chart.ctx;
+        const now=Date.now();
+        const pulse=Math.sin(now/350)*0.5+0.5;
+        const r=18+pulse*12;
+        ctx2.save();
+        ctx2.beginPath();
+        ctx2.arc(pt.x,pt.y,r,0,Math.PI*2);
+        ctx2.strokeStyle=`rgba(191,64,32,${0.15+pulse*0.25})`;
+        ctx2.lineWidth=3;
+        ctx2.stroke();
+        const r2=18+pulse*22;
+        ctx2.beginPath();
+        ctx2.arc(pt.x,pt.y,r2,0,Math.PI*2);
+        ctx2.strokeStyle=`rgba(191,64,32,${0.08+pulse*0.12})`;
+        ctx2.lineWidth=2;
+        ctx2.stroke();
+        ctx2.restore();
+        requestAnimationFrame(()=>chart.draw());
+      }
+    }],
+    options:{responsive:true,plugins:{legend:{position:'top',labels:{font:{family:'DM Mono',size:10}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: (${c.parsed.x.toFixed(1)}, ${c.parsed.y.toFixed(1)})`}}},
+      scales:{x:{title:{display:true,text:'Coordenada X'},min:0,max:600,ticks:{font:{family:'DM Mono',size:9}}},y:{title:{display:true,text:'Coordenada Y'},min:0,max:500,ticks:{font:{family:'DM Mono',size:9}}}}}
+  });
+}
+
+// 4. CARGA-DISTÂNCIA
+function calcCargaDist(pd){
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  const points=[...pd.fornecedores,...pd.clientes];
+  const vols=points.map((_,i)=>parseFloat(document.getElementById(`pvol_${i}`)?.value||points[i].vol));
+  const locais=pd.locais.map((l,i)=>({
+    nome:l,
+    x:parseFloat(document.getElementById(`lx_${i}`)?.value||[120,280,440][i]),
+    y:parseFloat(document.getElementById(`ly_${i}`)?.value||[280,180,320][i]),
+  }));
+  const cds=locais.map(loc=>points.reduce((s,p,i)=>{
+    const d=Math.sqrt((p.x-loc.x)**2+(p.y-loc.y)**2);
+    return s+vols[i]*d;
+  },0));
+  const best=cds.indexOf(Math.min(...cds));
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">🚚</div><div>
+      <div class="mb-title">Carga-Distância</div>
+      <div class="mb-desc">Para cada local candidato, calcula-se o somatório de (volume × distância) em relação a todos os pontos de origem e destino. O local com menor índice CD é o mais eficiente logisticamente.</div>
+      <div class="mb-tags"><span class="mb-tag">Quantitativo</span><span class="mb-tag">${locais.length} locais candidatos</span></div>
+    </div></div>
+
+    <div class="metrics-row" style="grid-template-columns:repeat(${locais.length},1fr)">
+      ${locais.map((l,j)=>`<div class="metric-card${j===best?' hi':''}">
+        <div class="mc-lbl2">${l.nome}</div>
+        <div class="mc-val">${(cds[j]/1000).toFixed(1)}k</div>
+        <div class="mc-sub"><span class="${j===best?'badge-best':j===cds.indexOf(Math.max(...cds))?'badge-3rd':'badge-2nd'}">${j===best?'🥇 Menor CD':'CD alto'}</span></div>
+      </div>`).join('')}
+    </div>
+
+    <div class="formula-box">
+      <div class="fb-title">Fórmula</div>
+      <span class="fv">CD<sub>j</sub></span> <span class="fo">=</span> <span class="fo">Σ</span> <span class="fo">(</span><span class="fv">V<sub>i</sub></span> <span class="fo">×</span> <span class="fv">d<sub>ij</sub></span><span class="fo">)</span>
+      <br><span class="fc">// V = volume; d = distância euclidiana entre local j e ponto i; menor CD = mais eficiente</span>
+    </div>
+
+    <div class="insight-box">
+      <div class="insight-title">💡 Interpretação</div>
+      <div class="insight-text">
+        O local <strong>${locais[best].nome}</strong> apresenta o menor índice carga-distância: <strong>${cds[best].toFixed(0)}</strong>, sendo a opção logisticamente mais eficiente entre as alternativas avaliadas.
+        O índice CD não tem unidade monetária direta, mas quanto menor, menor o esforço de transporte total. Para converter em custo, multiplique o CD pelo custo médio por unidade de distância.
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="cc-header"><div><div class="cc-title">Índice Carga-Distância por local candidato</div><div class="cc-sub">Menor é melhor</div></div></div>
+      <canvas id="mainChart"></canvas>
+    </div>
+
+    <div class="table-card">
+      <div class="tc-header"><div class="tc-title">Detalhamento: CD por ponto de origem/destino</div></div>
+      <table><thead><tr><th>Ponto</th><th>Volume</th>${locais.map(l=>`<th>d: ${l.nome}</th><th>V×d</th>`).join('')}</tr></thead>
+      <tbody>${points.map((p,i)=>`<tr><td class="td-lbl">${p.nome}</td><td class="td-mono">${vols[i]}</td>
+        ${locais.map(l=>{const d=Math.sqrt((p.x-l.x)**2+(p.y-l.y)**2);return `<td class="td-mono">${d.toFixed(1)}</td><td class="td-mono">${(vols[i]*d).toFixed(0)}</td>`;}).join('')}
+      </tr>`).join('')}
+      <tr style="background:var(--cream);font-weight:700"><td colspan="2">TOTAL (CD)</td>${locais.map((l,j)=>`<td colspan="2" class="td-mono${j===best?' td-best':''}">${cds[j].toFixed(0)}</td>`).join('')}</tr>
+      </tbody></table>
+    </div>
+  </div>`;
+
+  const colors=['#1d4e8f','#1a7a5e','#b8860b'];
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  chartInst=new Chart(ctx,{type:'bar',
+    data:{labels:locais.map(l=>l.nome),datasets:[{label:'Índice CD',data:cds,backgroundColor:locais.map((_,j)=>j===best?'rgba(26,122,94,.85)':'rgba(29,78,143,.55)'),borderRadius:6}]},
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{font:{family:'DM Mono',size:10}}},x:{ticks:{font:{family:'DM Sans',size:11}}}}}
+  });
+}
+
+// 5. BREAK-EVEN ESPACIAL
+function calcBreakeven(pd){
+  if(chartInst){chartInst.destroy();chartInst=null;}
+  const frete=parseFloat(document.getElementById('frete_km')?.value||0.15);
+  const locais=pd.custos.map((c,i)=>({
+    nome:c.local,
+    cf:parseFloat(document.getElementById(`bef_${i}`)?.value||c.fixo),
+    cv:parseFloat(document.getElementById(`bev_${i}`)?.value||c.var),
+    dist:parseFloat(document.getElementById(`bed_${i}`)?.value||[0,150,280][i]),
+  }));
+  const vols=Array.from({length:60},(_,i)=>(i+1)*200);
+  const custoTotal=(loc,v)=>loc.cf+(loc.cv+loc.dist*frete)*v;
+  const melhorVol=vols.map(v=>{
+    const ts=locais.map(l=>custoTotal(l,v));
+    return locais[ts.indexOf(Math.min(...ts))].nome;
+  });
+
+  // ponto de equilíbrio entre os dois primeiros
+  const [a,b]=locais;
+  const peVol = (b.cf-a.cf)/((a.cv+a.dist*frete)-(b.cv+b.dist*frete));
+  const colors=['#1d4e8f','#1a7a5e','#b8860b','#bf4020'];
+
+  document.getElementById('dashMain').innerHTML=`<div class="fade-in">
+    <div class="method-banner"><div class="mb-icon">📉</div><div>
+      <div class="mb-title">Break-Even Espacial</div>
+      <div class="mb-desc">Incorpora o custo de frete por distância à análise custo-volume tradicional. Permite identificar para qual volume cada localização é economicamente mais vantajosa.</div>
+      <div class="mb-tags"><span class="mb-tag">Quantitativo · Espacial</span><span class="mb-tag">Frete: R$ ${frete}/un./km</span></div>
+    </div></div>
+
+    <div class="formula-box">
+      <div class="fb-title">Fórmula</div>
+      <span class="fv">CT<sub>j</sub></span> <span class="fo">=</span> <span class="fv">CF<sub>j</sub></span> <span class="fo">+</span> <span class="fo">(</span><span class="fv">CV<sub>j</sub></span> <span class="fo">+</span> <span class="fv">Dist<sub>j</sub></span> <span class="fo">×</span> <span class="fv">Frete</span><span class="fo">)</span> <span class="fo">×</span> <span class="fv">Q</span>
+      <br><span class="fc">// CT = custo total; CF = fixo; CV = variável; Dist = distância ao mercado; Frete = R$/un./km; Q = volume</span>
+    </div>
+
+    <div class="insight-box">
+      <div class="insight-title">💡 Interpretação</div>
+      <div class="insight-text">
+        ${peVol>0&&peVol<vols[vols.length-1]?`Os locais <strong>${a.nome}</strong> e <strong>${b.nome}</strong> se tornam equivalentes em custo para aproximadamente <strong>${Math.round(peVol).toLocaleString('pt-BR')} unidades/mês</strong>. Abaixo desse volume, ${a.nome} é mais vantajoso; acima, ${b.nome}.`
+        :`Para os volumes analisados, <strong>${locais[0].nome}</strong> é consistentemente mais vantajoso.`}
+        Locais mais distantes do mercado compensam apenas quando têm custo fixo ou variável significativamente menores.
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="cc-header"><div><div class="cc-title">Custo total × Volume (com frete)</div><div class="cc-sub">O cruzamento das linhas indica o ponto de indiferença entre localizações</div></div></div>
+      <canvas id="mainChart"></canvas>
+    </div>
+
+    <div class="table-card">
+      <div class="tc-header"><div class="tc-title">Estrutura de custos com frete incorporado</div></div>
+      <table><thead><tr><th>Local</th><th>CF (R$)</th><th>CV (R$/un.)</th><th>Dist. (km)</th><th>Frete (R$/un.)</th><th>CV Total (R$/un.)</th></tr></thead>
+      <tbody>${locais.map(l=>`<tr><td class="td-lbl">${l.nome}</td><td class="td-mono">R$ ${l.cf.toLocaleString('pt-BR')}</td><td class="td-mono">R$ ${l.cv.toFixed(2)}</td><td class="td-mono">${l.dist} km</td><td class="td-mono">R$ ${(l.dist*frete).toFixed(2)}</td><td class="td-mono td-best">R$ ${(l.cv+l.dist*frete).toFixed(2)}</td></tr>`).join('')}</tbody>
+      </table>
+    </div>
+  </div>`;
+
+  const ctx=document.getElementById('mainChart').getContext('2d');
+  chartInst=new Chart(ctx,{type:'line',
+    data:{labels:vols,datasets:locais.map((l,j)=>({label:l.nome,data:vols.map(v=>custoTotal(l,v)),borderColor:colors[j],borderWidth:2,pointRadius:0,tension:.2,fill:false}))},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},
+      plugins:{legend:{position:'top',labels:{font:{family:'DM Mono',size:10}}},tooltip:{callbacks:{label:c=>`${c.dataset.label}: R$ ${Math.round(c.raw).toLocaleString('pt-BR')}`}}},
+      scales:{x:{title:{display:true,text:'Volume (unidades/mês)'},ticks:{font:{family:'DM Mono',size:9},callback:(_,i)=>vols[i]?.toLocaleString('pt-BR'),maxTicksLimit:10}},
+        y:{title:{display:true,text:'Custo Total (R$)'},ticks:{font:{family:'DM Mono',size:9},callback:v=>`R$ ${(v/1000).toFixed(0)}k`}}}}
+  });
+}
+
+// ── INIT ──
+initJourneyBar();
+if(URL_PRODUTO && PRODUCT_DATA[URL_PRODUTO]) STATE.product = URL_PRODUTO;
+// Atualiza título do step1 com nome do produto
+window.addEventListener('load', () => {
+  const titleEl = document.getElementById('step1Title');
+  if(titleEl && URL_PRODUTO && PRODUCT_NAMES[URL_PRODUTO]) {
+    titleEl.textContent = `Onde instalar a fábrica? — ${PRODUCT_NAMES[URL_PRODUTO]}`;
+  }
+});
+</script>
+</body>
+</html>
