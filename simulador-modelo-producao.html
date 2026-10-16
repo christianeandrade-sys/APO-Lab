@@ -870,8 +870,10 @@ window.addEventListener('load',()=>{
     const p = PRODUCT_PROFILES[URL_PRODUTO];
     STATE.volume = p.volume; STATE.variedade = p.variedade;
     STATE.variacao = p.variacao; STATE.visibilidade = p.visibilidade;
+    buildStep2Sliders();
+    goStep(2);
   }
-  goStep(2);
+  document.getElementById('btnNext1').disabled = false;
 });
 </script>
 </body>

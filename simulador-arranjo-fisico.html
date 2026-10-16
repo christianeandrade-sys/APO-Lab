@@ -1001,8 +1001,12 @@ initJourneyBar();
 window.addEventListener('load',()=>{
   if(URL_PRODUTO && PRODUCT_DATA[URL_PRODUTO]){
     STATE.product = URL_PRODUTO;
+    buildLayoutCards();
+    goStep(2);
   }
-  goStep(2);
+  // sem produto na URL: fica no step1 (mas step1 neste módulo não tem grade de produto,
+  // só explica o conceito — habilita o botão próximo direto)
+  document.getElementById('btnNext1').disabled = false;
 });
 </script>
 </body>

@@ -1010,8 +1010,13 @@ initJourneyBar();
 window.addEventListener('load',()=>{
   if(URL_PRODUTO && PRODUCT_DATA[URL_PRODUTO]){
     STATE.product = URL_PRODUTO;
+    const pd = PRODUCT_DATA[URL_PRODUTO];
+    document.getElementById('step2title').textContent = `Estratégia de capacidade: ${pd.label}`;
+    document.getElementById('step2tip').innerHTML =
+      `<strong>Contexto:</strong> ${pd.label} — modelo ${pd.modelo}. Demanda de referência: <strong>${pd.demandaMes.toLocaleString('pt-BR')} un./mês</strong>. Tempo de processamento unitário: <strong>${pd.tempoUnit} min/un.</strong> Eficiência operacional estimada: <strong>${pd.eficiencia}%</strong>.`;
+    goStep(2);
   }
-  goStep(2);
+  document.getElementById('btnNext1').disabled = false;
 });
 </script>
 </body>
